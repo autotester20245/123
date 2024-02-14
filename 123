@@ -1,426 +1,3216 @@
 package common;
 
+//import net.sourceforge.tess4j.ITesseract;
+//import net.sourceforge.tess4j.Tesseract;
+//import net.sourceforge.tess4j.TesseractException;
 
+//import org.apache.commons.httpclient.util.HttpURLConnection;
 
+//import org.apache.commons.io.FileUtils;
+
+//import org.apache.commons.io.FileUtils;
+
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.MediaEntityBuilder;
+
+import com.aventstack.extentreports.Status;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
+//import org.codehaus.plexus.util.FileUtils;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Random;
-//import java.util.logging.Logger;
-//import java.util.logging.Logger;
+import org.openqa.selenium.*;
+import org.openqa.selenium.Dimension;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.Color;
+import org.openqa.selenium.support.ui.*;
+import org.sikuli.script.FindFailed;
 
-public class CalendarUtility {
+import java.awt.*;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.time.Duration;
+import java.util.List;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-    private static final Logger LOGGER = Logger.getLogger(CalendarUtility.class.getName());
+public class UICommonUtility {
+    private static final Logger LOGGER = Logger.getLogger(UICommonUtility.class.getName());
+    static DriverManager driverManager = new DriverManager();
+    private static WebDriverWait wait;
+    private static WebDriver driver;
 
+    public static String str1;
 
+    public static String defaultItem;
+    private static Actions actions = null;
+    private static HashMap<String, String> color;
+    private static ExtentReports extent;
+    private static ExtentTest test;
 
-    // Get Current time stamp
-    // return -> Current timeStamp in format yyyy-MM-dd:HH:mm:ss:SSS
-    public static String getCurrentTimeStamp() {
-        SimpleDateFormat sdf = new SimpleDateFormat("MMddHHmmssSSS");
-        LOGGER.info("getCurrentTimeStamp in simple date format");
-        return sdf.format(new Date());
-    }
+    // static block pass driver reference
 
-    public static String getCurrentDate() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd : HH a");
-        LOGGER.info("getCurrentTimeStamp in simple date format");
-        return sdf.format(new Date());
-    }
+//    static {
+//        try {
+//            LOGGER.info("UI Common Utility Constructor called");
+//            UICommonUtility.driver = driverManager.getDriver();
+//            wait = new WebDriverWait(driver, FWKConstants.ELEMENT_WAIT_TIME);
+////            wait = new WebDriverWait(driver,Duration.ofSeconds(FWKConstants.ELEMENT_WAIT_TIME) );
+//            actions = new Actions(driver);
+//
+//        } catch (Exception e) {
+//            LOGGER.error("Exception hadled for getscreenshot" + e);
+//            throw e;
+//            //e.printStackTrace();
+//            LOGGER.error("Failed to initialize static block for UI common" + e);
+//
+//        }
+//    }
+//
 
-
-    public static boolean isDateWorkingDay(Calendar reportingDate) {
-        boolean isWorkingDay = true;
-        Calendar calendar = Calendar.getInstance();
-        calendar.setTime(reportingDate.getTime());
-        if (Calendar.SATURDAY == calendar.get(calendar.DAY_OF_WEEK) || Calendar.SUNDAY == calendar.get(calendar.DAY_OF_WEEK))
-            ;
-        {
-            isWorkingDay = false;
-        }
-
-        return isWorkingDay;
-    }
-
-    // Method use for getting the date value in format eg : 2021-11-05
-    //dd -> Provide date
-    //month -> provide month in format Jan
-    //yyyy -> provide year value
-
-    public static String getNextNusinessDate(String reportingDate) {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MMMM/yyyy");
-        Calendar currentDate = null;
+    public static void setDriverinstant() {
         try {
-            Date date = simpleDateFormat.parse(reportingDate);
-            currentDate = Calendar.getInstance();
-            currentDate.setTime(date);
-            currentDate.add(Calendar.DAY_OF_WEEK, 1);
-            while (!isDateWorkingDay(currentDate)) {
-                currentDate.add(Calendar.DAY_OF_WEEK, 1);
-            }
-        } catch (ParseException e) {
-            LOGGER.info("parseException::in getNext business Date" + e);
+            LOGGER.info("UI Common Utility Constructor called");
+            UICommonUtility.driver = driverManager.getDriver();
+            wait = new WebDriverWait(driver, FWKConstants.ELEMENT_WAIT_TIME);
+//            wait = new WebDriverWait(driver,Duration.ofSeconds(FWKConstants.ELEMENT_WAIT_TIME) );
+            actions = new Actions(driver);
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to initialize static block for UI common" + e);
+            throw e;
+            //e.printStackTrace();
+
+
         }
-        return simpleDateFormat.format(currentDate.getTime());
     }
 
-    // Method use for getting the date value in format eg : 13/05/2021
-    //dd -> Provide date
-    //month -> provide month value
-    //yyyy -> provide year value
+    // ----------------------getScreenShot----------------------------------
+    // Take the screenshot with the filename as fetaurename+testname+date
+//    fetaurename = modules of the application
+//    testname =related test scenario
 
-    public static String getBusinessDayonDays(String reportingDate, int noofDays, String ability) throws ParseException {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MMM/YYYY");
-        Date date = simpleDateFormat.parse(reportingDate);
-        Calendar currentDate = Calendar.getInstance();
-        currentDate.setTime(date);
-        Random random = new Random();
-        int days = random.nextInt(noofDays);
-        currentDate.add(Calendar.DAY_OF_WEEK, days);
-        if (ability.equalsIgnoreCase("ABLE")) {
-            while (!isDateWorkingDay(currentDate)) {
-                currentDate.add(Calendar.DAY_OF_WEEK, 1);
-            }
-        } else if (ability.equalsIgnoreCase("UNAbLE")) {
-            while (isDateWorkingDay(currentDate)) {
-                currentDate.add(Calendar.DAY_OF_WEEK, 1);
-            }
-        }
-        return simpleDateFormat.format(currentDate.getTime());
-
-    }
-
-    // Method use for identifing current calendar date is working date or not
-    //reportingDate -> Provide Calendar date
-    //REturn boolean value based on working day
-
-    public static String convertDateFormatYYYYMMDD(String inputString) {
-        SimpleDateFormat fromUser = new SimpleDateFormat("dd-MM-yyyy");
-        SimpleDateFormat myFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String dateMyformat = null;
-
-        Date dateFromUser = null; // parse it to the existing date pattern and return date type
+    public static String getScreenShot(String featureName, String testName) {
+        String destFile=null;
         try {
-            dateFromUser = fromUser.parse(inputString);
-            dateMyformat = myFormat.format(dateFromUser);
-
-        } catch (ParseException e) {
-            LOGGER.error("Exceptions Handled for setToday->" + e);
+            File srcFile = (File) ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+            String date = CalendarUtility.getCurrentTimeStamp().replace(":", "_").replace(".", "_");
+            destFile = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "Screenshot" + File.separator + featureName + File.separator + testName + File.separator + "ScreenShot_" + date + ".jpg";
+            FileUtils.copyFile(srcFile, new File(destFile));
+            LOGGER.info("Screenshot captured");
+        } catch (Exception e) {
+            LOGGER.error("Exception hadled for getscreenshot" + e);
+            e.printStackTrace();
         }
-
-        return dateMyformat;// 2009-05-19
+        return destFile;
     }
 
-    //Method to get the next businessDate
-    //reporting date
-
-    public static String convertDateFormatddMMYYYY(String inputString) throws ParseException {
-        SimpleDateFormat datePattern = new SimpleDateFormat("dd MMM yyyy"); //output format
-        Date date = new SimpleDateFormat("yyyy-MM-dd").parse(inputString); //input value
-        String stringDate = datePattern.format(date);
-        return stringDate;
-    }
-
-    //method to get business day on days
-    //reporting date -> provide reporting date value in 06/Jan/2021
-    //no of days->
-    //ability ->
-
-    public static String convertDateFormatddMMYYYYwithdash(String inputString) throws ParseException {
-        SimpleDateFormat datePattern = new SimpleDateFormat("dd-MMM-YYYY"); //output format
-        Date date = new SimpleDateFormat("yyyy-MM-dd").parse(inputString); //input value
-        String stringDate = datePattern.format(date);
-        return stringDate;
-    }
-
-    // Method to covert input string date value to formatted date String value for eg - "2009-05-19"
-    //inputString -> Input String date value in format "19-05-2021"/
-    // return date value in simple Date Format
-
-    public static String convertTimeStampToddMMYYYY(String inputString) throws ParseException {
-        SimpleDateFormat datePattern = new SimpleDateFormat("dd MMM yyyy"); //output format
-        String updatedDateValue = inputString.split("T")[0];
-        Date date = new SimpleDateFormat("yyyy-MM-dd").parse(updatedDateValue); //input value
-        String stringDate = datePattern.format(date);
-        LOGGER.info("dd MMM yyyy:::" + stringDate);
-        return stringDate;
-    }
-
-
-    //Method to convert input string date value to formatted date string for eg 17 jul 2020
-
-    //inputDate -> input string date value in format eg "2021-07-17"
-    //return String date value in simplpe format
-
-    public static String convertFromddMMMDDYYYY(String inputString) throws ParseException {
-        SimpleDateFormat datePattern = new SimpleDateFormat("yyyy-MM-dd"); //output format
-        Date date = new SimpleDateFormat("MMM dd,yyyy").parse(inputString); //input value
-        String stringDate = datePattern.format(date);
-        LOGGER.info("yyyy-MM-dd:::" + stringDate);
-        return stringDate;
-    }
-
-    //Method to convert input string date value to formatted date string for eg 17-jul-2020
-
-    //inputDate -> input string date value in format eg "2021-07-17"
-    //return String date value in simplpe format
-
-    public static String convertDateToYYYYmmddwithSlash(String inputString) throws ParseException {
-        SimpleDateFormat datePattern = new SimpleDateFormat("dd/MMM/yyyy"); //output format
-        Date date = new SimpleDateFormat("yyyy-MM-dd").parse(inputString); //input value
-        String stringDate = datePattern.format(date);
-        LOGGER.info("dd/MMM/yyyy:::" + stringDate);
-        return stringDate;
-    }
-
-    //Method to convert input string date value to formatted date string for eg 17 jul 2020
-    //inputDate -> input string date value in format eg "2021-07-17T10:31:11.802950"
-    //return String date value in simplpe format 17 jul 2020
-
-    public static boolean isValidFormat(String format, String value) {
-        Date date = null;
+    public static byte[] attachScreenShot() {
+        byte[] srcFile = new byte[0];
         try {
-            SimpleDateFormat sdf = new SimpleDateFormat(format);
-            date = sdf.parse(value);
-            if (!value.equals(sdf.format(date))) {
-                date = null;
+            srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+        } catch (Exception e) {
+            LOGGER.error("Exception hadled for getscreenshot" + e);
+            e.printStackTrace();
+        }
+        return srcFile;
+
+//        try {
+//            String srcFile = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BASE64);
+//            test.log(Status.FAIL, "Test step failed", MediaEntityBuilder.createScreenCaptureFromBase64String(srcFile).build());
+//            LOGGER.info("Screenshot captured");
+//        } catch (Exception e) {
+//            LOGGER.error("Exception hadled for getscreenshot" + e);
+//            e.printStackTrace();
+//        }
+    }
+
+    public static void FailedScenarioScreenshot(String featureName, String testName) throws IOException {
+        try {
+            File srcFile = (File) ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+            String date = CalendarUtility.getCurrentTimeStamp().replace(":", "_").replace(".", "_");
+            File destFile = new File(System.getProperty("user.dir") + File.separator + "src" + File.separator + "main" + File.separator + "resources" + File.separator + "Failed Screenshot" + File.separator + featureName + File.separator + testName + File.separator + "ScreenShot_" + date + ".jpg");
+            FileUtils.copyFile(srcFile, destFile);
+            LOGGER.info("Failed Screenshot captured");
+
+        } catch (Exception e) {
+            LOGGER.error("Exception hadled for getscreenshot" + e);
+            throw e;
+            //e.printStackTrace();
+        }
+    }
+
+    // ----------------------uploadFile----------------------------------
+    // upload a file in the application
+//    fileName - File tobe uploaded
+
+    public static void uploadFile(String fileName) throws AWTException {
+        Robot rb = new Robot();
+        String file = System.getProperty("user.dir") + File.separator + "src" + File.separator + "test" + File.separator + "resources" + File.separator + "data" + File.separator + fileName;
+
+        StringSelection str = new StringSelection(file);
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(str, null);
+        rb.keyPress(KeyEvent.VK_CONTROL);
+        rb.keyPress(KeyEvent.VK_V);
+        rb.keyRelease(KeyEvent.VK_V);
+        rb.keyRelease(KeyEvent.VK_CONTROL);
+        rb.keyPress(KeyEvent.VK_ENTER);
+        rb.keyRelease(KeyEvent.VK_ENTER);
+    }
+
+    // ----------------------wait----------------------------------
+
+//Method to halt application for provided section
+    // sec = seconds for which the application application needs to pause
+
+    public static void waitforSeconds(int sec) {
+        try {
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("ActionHandler.waitforSeconds -> sleep for seconds" + sec);
             }
-        } catch (ParseException e) {
-            LOGGER.info("Date format is not valid due to " + e);
+            Thread.sleep(sec * 1000L);
+        } catch (InterruptedException e) {
+            LOGGER.error("InterruptedException for action handler waitforSeconds" + e);
+            Thread.currentThread().interrupt();
         }
-        return date != null;
     }
 
-    //Method to convert input string date value to formatted date string for eg '2021-11-30'
-    //inputDate -> input string date value in format eg "Nov 30,2021"
-    //return String date value in simplpe format 2021-11-30
+    // Method to wait implicitly
+    // sec -> No of sec to wait
 
-    public static String convertDateFormatValueYYYYMMDD(String inputString) {
-        SimpleDateFormat fromUser = new SimpleDateFormat("MM/dd/yyyy");
-        SimpleDateFormat myFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String dateMyformat = null;
+    public static void implicitWait(int sec) {
+        driver.manage().timeouts().implicitlyWait(sec, TimeUnit.SECONDS);
+    }
 
-        Date dateFromUser = null; // parse it to the existing date pattern and return date type
+    public static void implicitWaitMilliSec(int ms) {
+        driver.manage().timeouts().implicitlyWait(ms, TimeUnit.MILLISECONDS);
+    }
+    // Method to wait with given polling time
+    // duration -> time to wait
+    // pollingTime -> frequency of checking
+
+    public static void fluentWait(int duration, int pollingTime) {
         try {
-            dateFromUser = fromUser.parse(inputString);
-            dateMyformat = myFormat.format(dateFromUser);
-
-        } catch (ParseException e) {
-            LOGGER.error("Exceptions Handled for setToday->" + e);
+            Wait wait = new FluentWait(driver).withTimeout(Duration.ofSeconds(duration)).pollingEvery(Duration.ofSeconds(pollingTime)).ignoring(Exception.class);
+        } catch (Exception e) {
+            LOGGER.error("Exception hadled for getscreenshot" + e);
+            throw e;
         }
 
-        return dateMyformat;// 2009-05-19
     }
 
-    //Method to convert input string date value to formatted date string for eg '07/JAN/2021'
-    //inputDate -> input string date value in format eg "2021-11-30"
-    //return String date value in simplpe format 07/JAN/2021
+    // Method to wait until alert is present
+    // wait until alert is present
 
-    public static String convertTimeStampToUpdatedFormatInLongFormat(String timeStamp) throws ParseException {
-        String updatedDateTimeStamp = timeStamp.substring(timeStamp.lastIndexOf("-") + 1);
-        updatedDateTimeStamp = updatedDateTimeStamp.substring(0, updatedDateTimeStamp.lastIndexOf(":"));
+    public static void waituntilAlertIspresent(int duration) {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, duration);
+            wait.until(ExpectedConditions.alertIsPresent());
 
-        String updatedDateTimeStampHr = updatedDateTimeStamp.substring(0, updatedDateTimeStamp.indexOf(":")).split("T")[1];
+        } catch (Exception e) {
+            LOGGER.error("Exception hadled for getscreenshot" + e);
+            throw e;
+            //e.printStackTrace();
+        }
+    }
 
-        String doubleDigitUpdatedTimeStampHR = "";
+    // Method to wait till visibility of Element
 
-        String updatedTimeStampMinutesDigit = updatedDateTimeStamp.substring(updatedDateTimeStamp.indexOf(":") + 1);
+    // locator -> locator of Element
+    // duration -> time to wait
 
-        String amOrPm;
-        int timeStampHr = Integer.parseInt(updatedDateTimeStampHr);
+    public static void waitUntilVisibilityOfElementLocated(By locator, int duration) {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, duration);
+            wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
 
-        if (timeStampHr >= 12) {
-            timeStampHr = timeStampHr - 12;
-            if (timeStampHr < 10) {
-                doubleDigitUpdatedTimeStampHR = "0" + timeStampHr;
+        } catch (Exception e) {
+            LOGGER.error("Exception hadled for getscreenshot" + e);
+            throw e;
+            //e.printStackTrace();
+        }
+    }
+
+    // Method to wait till visibility of All Element
+
+    // locator -> locator of Element
+    // duration -> time to wait
+
+    public static void waitUntilVisibilityOfElementLocatedBy(By locator, int duration) {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, duration);
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+
+        } catch (Exception e) {
+            LOGGER.error("Element not present -> waitUntilVisibilityOfElementLocatedBy()" + e);
+            throw e;
+            //e.printStackTrace();
+        }
+    }
+
+    // Method to wait till invisibility of element
+    // locator -> locator of Element
+    // duration -> time to wait
+
+    public static void waitUntilInvisibilityOfElement(By locator, int duration) {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, duration);
+            wait.until(ExpectedConditions.invisibilityOfElementLocated(locator));
+        } catch (Exception e) {
+            LOGGER.error("Element not present -> waitUntilVisibilityOfElementLocatedBy()" + e);
+            throw e;
+            //e.printStackTrace();
+        }
+    }
+
+    // Method to wait till invisibility of all element
+    // locator -> locator of Element
+    // duration -> time to wait
+
+    public static void waitUntilInvisibilityOfAllElements(By locator, int duration) {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, duration);
+            List<WebElement> webElementList = getElements(driver, locator);
+            wait.until(ExpectedConditions.invisibilityOfAllElements(webElementList));
+        } catch (Exception e) {
+            LOGGER.error("Element not present -> invisibilityOfAllElements" + e);
+            throw e;
+            //e.printStackTrace();
+        }
+    }
+
+    // Method to wait till presence of Element
+    // locator -> locator of Element
+    // duration -> time to wait
+
+    public static void waitUntilpresenceOfElementLocated(By locator, int duration) {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, duration);
+
+            wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+        } catch (Exception e) {
+            LOGGER.error("Element not present -> presenceOfElementLocated" + e);
+            throw e;
+            //e.printStackTrace();
+        }
+    }
+
+    // Method to wait till presence of all Element
+    // locator -> locator of Element
+    // duration -> time to wait
+
+    public static void waitUntilpresenceOfAllElementsLocatedBy(By locator, int duration) {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, duration);
+
+            wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(locator));
+        } catch (Exception e) {
+            LOGGER.error("Element not present -> presenceOfAllElementsLocatedBy" + e);
+            throw e;
+            //e.printStackTrace();
+        }
+    }
+
+    /// Method to wait till Element is clickable
+    // locator -> locator of Element
+    // duration -> time to wait
+
+    public static void waitUntilelementToBeClickable(By locator, int duration) {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, duration);
+
+            wait.until(ExpectedConditions.elementToBeClickable(locator));
+        } catch (Exception e) {
+            LOGGER.error("Element not present -> elementToBeClickable" + e);
+            throw e;
+            //e.printStackTrace();
+        }
+    }
+
+    /// Method to wait till frame is available and then switch to it using index
+    // index -> index of frame
+    // duration -> time to wait
+
+    public static void frameToBeAvailableAndSwitchToItByindex(int index, int duration) {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, duration);
+
+            wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(index));
+        } catch (Exception e) {
+            LOGGER.error("Element not present -> elementToBeClickable" + e);
+            throw e;
+            //e.printStackTrace();
+        }
+    }
+
+    /// Method to wait till frame is available and then switch to it using index
+    // framename -> Name of frame
+    // duration -> time to wait
+
+    public static void frameToBeAvailableAndSwitchToItByframename(String framename, int duration) {
+        try {
+            WebDriverWait wait = new WebDriverWait(driver, duration);
+
+            wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(framename));
+        } catch (Exception e) {
+            LOGGER.error("Element not present -> elementToBeClickable" + e);
+            throw e;
+            //e.printStackTrace();
+        }
+    }
+
+//----------------------getElements----------------------------------
+    // Reusable method which will find element
+
+//    driver -> webDriver Object
+//    locator -> locator of an element
+
+    public static WebElement getElement(WebDriver driver, By locator) {
+        final int maxAttempts = 2;
+        for (int i = 1; i <= maxAttempts; i++) {
+            try {
+                LOGGER.info("Searching for an Element");
+                return driver.findElement(locator);
+            } catch (StaleElementReferenceException e) {
+                LOGGER.error("Reattempt to find Element" + e);
+                throw e;
+            } catch (Exception e) {
+                LOGGER.error("Element not present -> elementToBeClickable" + e);
+                throw e;
+            }
+
+        }
+        return null;
+
+    }
+
+    // Reusable method which will find elements
+
+//    driver -> webDriver Object
+//    locator -> locator of an element
+
+    public static List<WebElement> getElements(WebDriver driver, By locator) {
+        final int maxAttempts = 2;
+        for (int i = 1; i <= maxAttempts; i++) {
+            try {
+                LOGGER.info("Searching for an Element");
+                return driver.findElements(locator);
+            } catch (StaleElementReferenceException e) {
+                LOGGER.error("Reattempt to find Elements" + e);
+                throw e;
+            } catch (Exception e) {
+                LOGGER.error("Unable to locate the Elements" + e);
+                throw e;
+            }
+
+        }
+        return null;
+
+    }
+
+    // ----------------------click----------------------------------
+
+    // Perform click action
+    // locator - of an element
+
+    public static void click(By locator) {
+        try {
+            LOGGER.info("Locating element to be clickable");
+            wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null && elem.isEnabled()) {
+                LOGGER.info("clicking the element");
+                elem.click();
+            } else {
+                LOGGER.error("Element is not found or is not clickable");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: for click - TimeoutException" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected condition failed:Waiting for element should be clickable -click" + e);
+            throw e;
+        }
+
+    }
+
+    // Method to doubleclick
+
+    // locator -> Locate of an Element
+
+    public static void DoubleClick(By locator) {
+        try {
+            LOGGER.info("Locating element to be double clickable");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null && elem.isEnabled()) {
+                LOGGER.info("Double clicking the element");
+                actions.doubleClick((WebElement) locator).build().perform();
+                // actions.doubleClick(elem).build().perform();
+            } else {
+                LOGGER.error("Element is not found or is not clickable");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: for click - TimeoutException" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected condition failed:Waiting for element should be clickable -click" + e);
+            throw e;
+        }
+
+    }
+
+    // This method will and entered Text value in input field and post this action
+    // press enter
+    // locator -locator of an element where we want to entered text
+    // text input text value
+
+    public static void clickAndEnteredTextValueBySendKeyswithEnteredFromWebElement(WebElement elem, String text) {
+        try {
+            LOGGER.info("Locating element to be sendkey Actions");
+//            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+//            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                LOGGER.info("clicking-settext-entered the element");
+                actions.click(elem).sendKeys(text, Keys.ENTER).build().perform();
 
             } else {
-                doubleDigitUpdatedTimeStampHR = String.valueOf(timeStampHr);
+                LOGGER.error("Element is not found or is not sendkey Actions withEntered");
             }
-            amOrPm = "PM";
-        } else {
-            amOrPm = "AM";
-            if (timeStampHr < 10) {
-                doubleDigitUpdatedTimeStampHR = "0" + timeStampHr;
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: for click - TimeoutException -> clickAndEnteredTextValueBySendKeyswithEntered" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected condition failed:Waiting for element should be clickAndEnteredTextValueBySendKeyswithEntered " + e);
+            throw e;
+        }
+
+    }
+
+    public static void clickAndEnteredTextValueBySendKeyswithEntered(By locator, String text) {
+        try {
+            LOGGER.info("Locating element to be sendkey Actions");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                LOGGER.info("clicking-settext-entered the element");
+                actions.click(elem).sendKeys(text, Keys.ENTER).build().perform();
 
             } else {
-                doubleDigitUpdatedTimeStampHR = String.valueOf(timeStampHr);
+                LOGGER.error("Element is not found or is not sendkey Actions withEntered");
             }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: for click - TimeoutException -> clickAndEnteredTextValueBySendKeyswithEntered" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected condition failed:Waiting for element should be clickAndEnteredTextValueBySendKeyswithEntered " + e);
+            throw e;
         }
-        String updatedTimeStempFormat = convertDateFormatddMMYYYY(timeStamp) +
-                "(" + doubleDigitUpdatedTimeStampHR + ":" + updatedTimeStampMinutesDigit
-                + " " + amOrPm + ")";
 
-        LOGGER.info("Final TimeStamp Value::" + updatedTimeStempFormat);
-        return updatedTimeStempFormat;
+    }
+
+    public static void sendKeys() {
+        driver.findElement(By.id("uploadFileConfigurationImport")).sendKeys("C:\\Users\\hello\\Documents\\documents\\DealerModsUpload.xlsx");  //File path in remote machine
 
 
     }
 
-    // Method to validate date format
+    public static void EnterPress() {
+        try {
+            LOGGER.info("Locating element to be sendkey Actions");
+            actions.sendKeys(Keys.ENTER).build().perform();
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: for click - TimeoutException -> clickAndEnteredTextValueBySendKeyswithEntered" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected condition failed:Waiting for element should be clickAndEnteredTextValueBySendKeyswithEntered " + e);
+            throw e;
+        }
 
-    // format -> Provide date format syntax
-    //value -> provide data value
-    //return -> boolean value based on return
+    }
 
-    //Get the Month value in NUmber FOrmat
-    // month -> provide input as month value in format ""Jan
-    // return -> Number Value of provided month
-    public String getMonNUmber(String month) {
-        if (month.equalsIgnoreCase("Jan")) {
-            return "01";
-        } else if (month.equalsIgnoreCase("Feb")) {
-            return "02";
-        } else if (month.equalsIgnoreCase("Mar")) {
-            return "03";
-        } else if (month.equalsIgnoreCase("Apr")) {
-            return "04";
-        } else if (month.equalsIgnoreCase("May")) {
-            return "05";
-        } else if (month.equalsIgnoreCase("Jun")) {
-            return "06";
-        } else if (month.equalsIgnoreCase("Jul")) {
-            return "07";
-        } else if (month.equalsIgnoreCase("Aug")) {
-            return "08";
-        } else if (month.equalsIgnoreCase("Sep")) {
-            return "09";
-        } else if (month.equalsIgnoreCase("Oct")) {
-            return "10";
-        } else if (month.equalsIgnoreCase("Nov")) {
-            return "11";
-        } else if (month.equalsIgnoreCase("Dec")) {
-            return "12";
+    public static void clearAndEnteredTextValueBySendKeyswithEntered(By locator, String text) {
+        try {
+            LOGGER.info("Locating element to be sendkey Actions");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                LOGGER.info("clicking-settext-entered the element");
+
+                actions.click(elem).keyDown(Keys.CONTROL)
+                        .sendKeys("a")
+                        .keyUp(Keys.CONTROL)
+                        .sendKeys(Keys.BACK_SPACE).sendKeys(text, Keys.ENTER).build().perform();
+
+            } else {
+                LOGGER.error("Element is not found or is not sendkey Actions withEntered");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: for click - TimeoutException -> clickAndEnteredTextValueBySendKeyswithEntered" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected condition failed:Waiting for element should be clickAndEnteredTextValueBySendKeyswithEntered " + e);
+            throw e;
+        }
+
+    }
+
+    public static void clickAndEnter(By locator) {
+        try {
+            LOGGER.info("Locating element to be sendkey Actions");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                LOGGER.info("clicking-settext-entered the element");
+                actions.click(elem).sendKeys(Keys.ENTER).build().perform();
+
+            } else {
+                LOGGER.error("Element is not found or is not sendkey Actions withEntered");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: for click - TimeoutException -> clickAndEnteredTextValueBySendKeyswithEntered" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected condition failed:Waiting for element should be clickAndEnteredTextValueBySendKeyswithEntered " + e);
+            throw e;
+        }
+
+    }
+    // This method will and entered Text value in input field and post this action
+    // press enter
+    // locator -locator of an element where we want to entered text
+    // text input text value
+
+    public static void clickAndEnteredTextValueBySendKeys(By locator, String text) {
+        try {
+            LOGGER.info("Locating element to be sendkey Actions");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                LOGGER.info("clicking-settext-entered the element");
+                actions.click(elem).sendKeys(text).build().perform();
+                // actions.click(elem).sendKeys(text);
+
+            } else {
+                LOGGER.error("Element is not found or is not sendkey Actions withEntered");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: waiting to visibility of element -> clickAndEnteredTextValueBySendKeys" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for element -> clickAndEnteredTextValueBySendKeys " + e);
+            throw e;
+        }
+
+    }
+
+    // This Method use for move to the element and clicks (without releasing) in the
+    // middle of the given statement
+    public static void clickAndHold(By locator) {
+        try {
+            LOGGER.info("Locating element to be click and Hold");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                LOGGER.info("clicking and holding the element");
+                // Actions actions = new Actions(driver);
+                actions.clickAndHold(elem).build().perform();
+            } else {
+                LOGGER.error("Element is not found for click and hold");
+            }
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for" + e);
+            throw e;
+
+        }
+
+    }
+
+    // This methods performs right click
+
+    // Locator -> Locating the element
+    public static void contextClick(By locator) {
+        try {
+            LOGGER.info("Locating element to be right click ");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                LOGGER.info("clicking and holding the element");
+                // Actions actions = new Actions(driver);
+                actions.contextClick(elem).build().perform();
+
+            } else {
+                LOGGER.error("Element is not found for click right click");
+            }
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for contextClick" + e);
+            throw e;
+
+        }
+
+    }
+
+    // ----------------------submit----------------------------------
+    // perform submit action on page
+    // locator - locator of an element
+
+    public static void submit(By locator) {
+        try {
+            LOGGER.info("Locating element to submit");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null && elem.isEnabled()) {
+                LOGGER.info("submit performed");
+                elem.submit();
+            } else {
+                LOGGER.error("Element is not found for submit");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: waiting for visibility of element-> submit" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for submit" + e);
+            throw e;
+
+        }
+
+    }
+
+    // ----------------------GET/Set Values----------------------------------
+
+    // get Text of element
+    // locator -> Locator aof an element
+
+    public static String getText(By locator) {
+        try {
+            LOGGER.info("Locating element to getText");
+            wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                return elem.getText();
+            } else {
+                LOGGER.error("Element is not found for getText");
+                return null;
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: waiting of visibility of element -> getText" + e);
+            throw e;
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for -> getText" + e1);
+            throw e1;
+        }
+
+    }
+
+    // Set Text to element field
+
+    // locator = locator of an element
+    // text = text of an element
+
+    public static void setText(By locator, String text) {
+        try {
+            LOGGER.info("Locating element to setText");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                elem.sendKeys(text);
+            } else {
+                LOGGER.error("Element is not found for setText");
+
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: waiting of visibility of element -> setText" + e);
+            throw e;
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for setText" + e1);
+            throw e1;
+        }
+    }
+
+    // Get page Title
+
+    public static String getTitle() {
+        try {
+            LOGGER.info("get title of page");
+            return driver.getTitle();
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: waiting for page to lOAD gettitle" + e);
+            throw e;
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for gettitle" + e1);
+            return null;
+
+        }
+
+    }
+
+//This method clear the field and thenentered  Text to element field
+
+    public static void clearAndSetText(By locator, String text) {
+        try {
+            LOGGER.info("Locating element to clearAndSetText");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                elem.clear();
+                // elem.sendKeys(new CharSequence[]{text});
+                elem.sendKeys(text);
+            } else {
+                LOGGER.error("Element is not found for clearAndSetText");
+
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: waiting of visibility of element -> clearAndSetText" + e);
+            throw e;
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for clearAndSetText" + e1);
+            throw e1;
+        }
+
+    }
+
+    // Clear Text to an element field
+
+    // locator = locator of an element
+
+    public static void clearText(By locator) {
+        try {
+            LOGGER.info("Locating element to clearText");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                elem.clear();
+            } else {
+                LOGGER.error("Element is not found for clearText");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: waiting of visibility of element -> clearText" + e);
+            throw e;
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for clearText" + e1);
+            throw e1;
+        }
+    }
+
+// This method will fethch the value of attribute of an element log
+//    locator  -> locator of an element
+//    attributeName -> attribute name whose value user wants to get
+
+    public static String getAttribute(By locator, String attributName) {
+        try {
+            LOGGER.info("Locating element to getAttribute");
+            wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                return elem.getAttribute(attributName);
+            }
+            LOGGER.error("Element is not found for getAttribute");
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for getAttribute" + e1);
+            throw e1;
+        }
+        return "";
+    }
+
+    // This method returns Foreground color of element
+    // locator -> Locator of an element
+
+//    public static String getForegroundColor(By locator) {
+//        try {
+//            LOGGER.info("Locating element to get ForegroundColor");
+//            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+//            WebElement elem = getElement(driver, locator);
+//            if (elem != null) {
+//                String checkColor = getColor(Color.fromString(elem.getCssValue("color")).asHex(), LOGGER);
+//                if (checkColor != null) {
+//                    return checkColor;
+//                }
+//            } else {
+//                LOGGER.error("Element is not found for ForegroundColor");
+//
+//            }
+//        } catch (TimeoutException e) {
+//            LOGGER.error("Expected condition failed: waiting of visibility of element -> ForegroundColor" + e);
+//
+//        } catch (Exception e1) {
+//            LOGGER.error("Exception handled for ForegroundColor" + e1);
+//
+//        }
+//        return null;
+//
+//    }
+
+    // This method returns Background color of element
+    // locator -> Locator of an element
+
+//    public static String getBackgroundColor(By locator) {
+//        try {
+//            LOGGER.info("Locating element to get BackgroundColor");
+//            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+//            WebElement elem = getElement(driver, locator);
+//            if (elem != null) {
+//                String checkColor = getColor(Color.fromString(elem.getCssValue("background-color")).asHex(), LOGGER);
+//                if (checkColor != null) {
+//                    return checkColor;
+//                }
+//            } else {
+//                LOGGER.error("Element is not found for ForegroundColor");
+//
+//            }
+//        } catch (TimeoutException e) {
+//            LOGGER.error("Expected condition failed: waiting of visibility of element -> ForegroundColor" + e);
+//
+//        } catch (Exception e1) {
+//            LOGGER.error("Exception handled for ForegroundColor" + e1);
+//
+//        }
+//        return null;
+//
+//    }
+
+    // Takes the hex code of color as arguments and will fetch name from COLOR Map
+    // object
+
+    // hexCode -> hexcode for the getColor
+    // logger -> logger of the file
+
+    public static String getColor(String hexCode, Logger logger) {
+
+        if (color != null) {
+            logger.info("Checking color of element present in COLOR Map");
+            for (String colorKey : color.keySet()) {
+                if (colorKey.equalsIgnoreCase(hexCode)) {
+                    return color.get(colorKey);
+                }
+            }
+        }
+        LOGGER.error("Color not found in color map");
+        return null;
+
+    }
+
+    // Method to get time required by the page to load
+
+    public static int getPageLoadTime() {
+        int pageLoadTime = -1;
+        try {
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            pageLoadTime = ((Number) js.executeScript("return window.performance.timing.loadEventEnd-window.performance.timings.navigationStart")).intValue();
+        } catch (Exception e) {
+            LOGGER.error("Cannot fetch page load time :reusableFunctions.getPageLoadTime()" + e);
+            throw e;
+        }
+        return pageLoadTime;
+    }
+
+    // Method to get time required by DOM to load
+
+    public static int getDOMLoadTime() {
+        int domLoadTime = -1;
+        try {
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            domLoadTime = ((Number) js.executeScript("return window.performance.timing.domContentLoadedEventEnd-window.performance.timings.navigationStart")).intValue();
+        } catch (Exception e) {
+            LOGGER.error("Cannot fetch page load time :reusableFunctions.getPageLoadTime()" + e);
+            throw e;
+        }
+        return domLoadTime;
+    }
+
+    // THis method use to Javascript mouse over
+
+    // locator -> element on mouse over perform
+
+    public static void selectByVisibleText(By locator, String visibleText) {
+        try {
+            LOGGER.info("Locating Dropbox Element - Select Visible Text");
+//          wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+
+                try {
+                    LOGGER.info("Selecting a visibleText from Dropbox");
+                    Select select = new Select(elem);
+                    select.selectByVisibleText(visibleText);
+
+                } catch (Exception e) {
+                    LOGGER.error("Element tag should be select to use DropBox..." + e);
+                    throw e;
+                }
+            } else {
+                LOGGER.error("Element Dropbox is not found -> selectByVisibleText");
+
+            }
+//        } catch (TimeoutException e) {
+//            LOGGER.error("Expected condition failed: waiting of visibility of element -> selectByVisibleText" + e);
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for selectByVisibleText" + e1);
+            throw e1;
+        }
+    }
+    public static String getSelectedOptionDropDown(By locator) {
+        String text = null;
+        try {
+            LOGGER.info("Locating Dropbox Element - Select Visible Text");
+//          wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+
+                try {
+                    LOGGER.info("Selecting a visibleText from Dropbox");
+                    Select select = new Select(elem);
+                    WebElement ele= select.getFirstSelectedOption();
+                    text=ele.getText();
+                } catch (Exception e) {
+                    LOGGER.error("Element tag should be select to use DropBox..." + e);
+                    throw e;
+                }
+            } else {
+                LOGGER.error("Element Dropbox is not found -> selectByVisibleText");
+
+            }
+//        } catch (TimeoutException e) {
+//            LOGGER.error("Expected condition failed: waiting of visibility of element -> selectByVisibleText" + e);
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for selectByVisibleText" + e1);
+            throw e1;
+        }
+        return text;
+    }
+
+    public static List<WebElement> getAllOptionDropDown(By locator) {
+        String text = null;
+        List<WebElement> allOptions = null;
+        try {
+            LOGGER.info("Locating Dropbox Element - Select Visible Text");
+//          wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+
+                try {
+                    LOGGER.info("Selecting a visibleText from Dropbox");
+                    Select select = new Select(elem);
+                    allOptions = select.getOptions();
+                    select.getOptions();
+                    text=elem.getText();
+                    LOGGER.info(text);
+                } catch (Exception e) {
+                    LOGGER.error("Element tag should be select to use DropBox..." + e);
+                    throw e;
+                }
+            } else {
+                LOGGER.error("Element Dropbox is not found -> selectByVisibleText");
+
+            }
+//        } catch (TimeoutException e) {
+//            LOGGER.error("Expected condition failed: waiting of visibility of element -> selectByVisibleText" + e);
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for selectByVisibleText" + e1);
+            throw e1;
+        }
+        return allOptions;
+    }
+
+
+
+    // ----------------------Select By Value----------------------------------
+
+    // Select an option from drop down by visible text
+
+    // locator -> Locator of an Element
+    // visibleText -> Text of option tobe selected from dropdown
+
+    public static String selectByIndex(By locator, int byIndex) {
+        try {
+            LOGGER.info("Locating Dropbox Element - selectByIndex");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                try {
+                    LOGGER.info("Selecting an option from Dropbox by Index");
+                    Select select = new Select(elem);
+                    select.selectByIndex(byIndex);
+                    WebElement option = select.getFirstSelectedOption();
+                    defaultItem = option.getText();
+                    System.out.println(defaultItem );
+                } catch (Exception e) {
+                    LOGGER.error("Element tag should be select to use DropBox..." + e);
+                    throw e;
+                }
+            } else {
+                LOGGER.error("Element Dropbox is not found -> selectByIndex");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: waiting of visibility of element -> selectByIndex" + e);
+            throw e;
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for selectByIndex" + e1);
+            throw e1;
+        }
+        return defaultItem;
+    }
+
+    // Select an option from drop down by index
+    // locator -> Locator of an Element
+    // byIndex -> Index of option to be selected from drop down
+
+    public static void selectByValue(By locator, String value) {
+        try {
+            LOGGER.info("Locating Dropbox Element - selectByValue");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                try {
+                    LOGGER.info("Selecting an option from Dropbox by Value");
+                    Select select = new Select(elem);
+                    select.selectByValue(value);
+                } catch (Exception e) {
+                    LOGGER.error("Element tag should be select to use DropBox..." + e);
+                    throw e;
+                }
+            } else {
+                LOGGER.error("Element Dropbox is not found -> selectByValue");
+
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: waiting of visibility of element -> selectByValue" + e);
+            throw e;
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for selectByValue" + e1);
+            throw e1;
+        }
+    }
+
+    // Select an option from drop down by index
+    // locator -> Locator of an Element
+    // byIndex -> Index of option to be selected from drop down
+
+    public static boolean checkImagePresent(By locator) {
+        try {
+            LOGGER.info("Locating image");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                boolean imagePresent = (Boolean) ((JavascriptExecutor) driver).executeScript("return arguments [0].complete" + " &&typeof argument[0].naturalwidth != 'undefined'" + "&& arguments[0].naturalwidth>0", elem);
+                return imagePresent;
+
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed:image not found" + e);
+            throw e;
+        } catch (Exception e1) {
+            LOGGER.error("Expected handled for checkImagePresent" + e1);
+            throw e1;
+        }
+        return false;
+    }
+
+    // ----------------------Enable/visible/present----------------------------------
+
+    // Method to check image is present or not
+    // locator -> Locator of image
+
+    public static boolean isElementPresent(By locator) {
+        Boolean flag = false;
+        try {
+            WebElement webElement = driver.findElement(locator);
+            if (webElement.getSize() != null) {
+                flag = true;
+            }
+        } catch (NoSuchElementException e) {
+            LOGGER.error("Expected handled for isElementPresent" + e);
+            flag = false;
+            throw e;
+        }
+        return flag;
+    }
+
+    // Method to check if element is present
+    // locator -> locator of an element
+
+    public static boolean isElementPresent(WebElement element) {
+        boolean flag = false;
+        try {
+            if (element.isDisplayed() || element.isEnabled()) {
+                flag = true;
+            }
+
+        } catch (NoSuchElementException | StaleElementReferenceException e) {
+            LOGGER.error("Expected handled for isElementPresent" + e);
+            throw e;
+        }
+
+        LOGGER.info("Return is Elemnet present value" + flag);
+        return flag;
+    }
+
+    // Method to check if element is present
+    // locator -> locator of an element
+
+    public static boolean elementIsEnabled(By locator) {
+        Boolean flag = null;
+        try {
+            LOGGER.info("Locating Element to check element is Enabled ");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                LOGGER.info("Element is not null");
+                flag = elem.isEnabled();
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed : waiting for visibility of element - elementisEnable" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for - elementisEnable" + e);
+            throw e;
+        }
+        return flag;
+    }
+
+    // check if element is enable
+    // locator -> locator of an element
+
+    public static boolean elementIsNotVisible(By locator) {
+        Boolean flag = false;
+        try {
+            WebElement webElement = driver.findElement(locator);
+            if (!webElement.isDisplayed()) {
+                flag = true;
+            }
+        } catch (Exception e) {
+            LOGGER.error("exception handled for element is not Visible" + e);
+            throw e;
+        }
+        return flag;
+    }
+
+
+    // Method to check if element is not visible
+    // locator -> locator of an element
+
+    public static boolean elementIsVisible(By locator) {
+        Boolean flag = false;
+        try {
+            LOGGER.info("Locating Element to check if element is visible");
+            wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+//            wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+//            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                LOGGER.info("Element is not null");
+                flag = elem.isDisplayed();
+            }
+        } catch (Exception e1) {
+            LOGGER.error("Expected handled for element is Visible" + e1);
+            throw e1;
+        }
+        return flag;
+    }
+// Method to check if element is  visible
+    // locator -> locator of an element
+
+    // Method to scroll to top of the page
+    public static void pageTop() {
+        try {
+            LOGGER.info("Pressed pageTop");
+            actions.keyDown(Keys.CONTROL).sendKeys(Keys.UP).perform();
+            actions.keyDown(Keys.CONTROL).release().perform();
+            waitforSeconds(2);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for pageTop ->" + e);
+            throw e;
+        }
+    }
+
+    // ----------------------pAge up/down/Moving----------------------------------
+
+    // Method to scroll to bottom of the page
+    public static void pageBottom() {
+        try {
+            LOGGER.info("Pressed page bottom");
+            actions.keyDown(Keys.CONTROL).sendKeys(Keys.DOWN).perform();
+            actions.keyDown(Keys.CONTROL).release().perform();
+            waitforSeconds(2);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for page bottom ->" + e);
+            throw e;
+        }
+    }
+
+    public static void KeysDownEnter() {
+        try {
+            LOGGER.info("Pressed page bottom");
+            actions.sendKeys(Keys.ARROW_DOWN, Keys.RETURN).perform();
+            waitforSeconds(2);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for page bottom ->" + e);
+            throw e;
+        }
+    }
+
+    public static void dragAndDrop(By source, By target) {
+        try {
+            LOGGER.info("Locating element to be dragged and dropped");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(source));
+            WebElement elem = getElement(driver, source);
+            if (elem != null && elem.isEnabled()) {
+                LOGGER.info("Dragging and dropping the element");
+                // Actions actions = new Actions(driver);
+                actions.dragAndDrop((WebElement) source, (WebElement) target).build().perform();
+            } else {
+                LOGGER.error("Element is not found or is not enable to be dragged and dropped");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: for draganddrop- TimeoutException" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected condition failed:Waiting for element should be  -dragged and dropped" + e);
+            throw e;
+        }
+
+    }
+
+    // ----------------------drag and drop----------------------------------
+
+    // Method to drag and drop from Source to Target
+
+    // Source -> loacator of source
+
+    public static void dragAndDrop(By source, int xoffset, int yoffset) {
+        try {
+            LOGGER.info("Locating element to be dragged and dropped By");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(source));
+            WebElement elem = getElement(driver, source);
+            if (elem != null && elem.isEnabled()) {
+                LOGGER.info("Dragging and dropping the element");
+                // Actions actions = new Actions(driver);
+                actions.dragAndDropBy((WebElement) source, xoffset, yoffset).build().perform();
+            } else {
+                LOGGER.error("Element is not found or is not enable to be dragged and dropped By");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: for draganddrop by- TimeoutException" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected condition failed:Waiting for element should be  -dragged and dropped by" + e);
+            throw e;
+        }
+    }
+    // Method to drag and drop from Source to Target using dimension
+
+    // Source -> loacator of source
+    // xoffset-> dimension of target on X-axis
+    // yoffset-> dimension of target on Y-axis
+
+    public static void switchTonewTab() {
+        try {
+            Set<String> windows = driver.getWindowHandles();
+            driver.switchTo().window(windows.toArray()[windows.size() - 1].toString());
+        } catch (NoSuchWindowException e) {
+            LOGGER.error("Invalid Window : reusable function.switch to new tab");
+            throw e;
+        }
+    }
+
+    // ----------------------TAB/Window----------------------------------
+
+    // Method to Switch to New tab
+
+    // Method to Switch to New tab
+    public static void switchToHomeTab() {
+        try {
+            Set<String> windows = driver.getWindowHandles();
+            driver.switchTo().window(windows.toArray()[0].toString());
+        } catch (NoSuchWindowException e) {
+            LOGGER.error("Invalid WIndow : reuseable function.switchToFirstTab");
+            throw e;
+        }
+    }
+
+    public static void switchToSecondTab() {
+        try {
+            Set<String> windows = driver.getWindowHandles();
+            driver.switchTo().window(windows.toArray()[1].toString());
+        } catch (NoSuchWindowException e) {
+            LOGGER.error("Invalid WIndow : reuseable function.switchToFirstTab");
+            throw e;
+        }
+    }
+
+    public static void switchToFourthTab() {
+        try {
+            Set<String> windows = driver.getWindowHandles();
+            driver.switchTo().window(windows.toArray()[3].toString());
+        } catch (NoSuchWindowException e) {
+            LOGGER.error("Invalid WIndow : reuseable function.switchToFirstTab");
+            throw e;
+        }
+    }
+
+    public static void switchToThirdTab() {
+        try {
+            Set<String> windows = driver.getWindowHandles();
+            driver.switchTo().window(windows.toArray()[2].toString());
+        } catch (NoSuchWindowException e) {
+            LOGGER.error("Invalid WIndow : reuseable function.switchToFirstTab");
+            throw e;
+        }
+    }
+
+    public static void TabSwitch() {
+        try {
+            UICommonUtility.waitforSeconds(5);
+
+            UICommonUtility.waitforSeconds(5);
+        } catch (NoSuchWindowException e) {
+            LOGGER.error("Invalid WIndow : reuseable function.switchToFirstTab");
+            throw e;
+        }
+    }
+
+    public static void switchToAlert()
+    {
+        try {
+            driver.switchTo().alert();
+        } catch (NoSuchWindowException e) {
+            LOGGER.error("Alert is not present");
+            throw e;
+        }
+    }
+
+    public static void switchToWindow(int index) {
+        try {
+            Set<String> windows = driver.getWindowHandles();
+            String[] windowsArray = Arrays.copyOf(windows.toArray(), windows.size(), String[].class);
+            driver.switchTo().window(windowsArray[index]);
+        } catch (NoSuchWindowException e) {
+            LOGGER.error("Invalid WIndow : reuseable function.switchToWindowByindex");
+            throw e;
+        }
+    }
+
+    // Method to switch to window by index
+
+    public static void switchToWindow(String url) {
+        try {
+
+            String mainWindow = driver.getWindowHandle();
+            if (driver.getCurrentUrl().equalsIgnoreCase(url)) {
+                driver.switchTo().window(mainWindow);
+                LOGGER.info(driver.getTitle() + ":" + driver.getCurrentUrl());
+                return;
+            }
+            Set<String> windows = driver.getWindowHandles();
+            Iterator<String> i = windows.iterator();
+            while (i.hasNext()) {
+                String childWindow = i.next();
+                if (!mainWindow.equalsIgnoreCase(childWindow)) {
+                    driver.switchTo().window(childWindow);
+                    if (driver.getCurrentUrl().equalsIgnoreCase(url)) {
+                        LOGGER.info(driver.getTitle() + ":" + driver.getCurrentUrl());
+                        break;
+                    }
+                }
+            }
+        } catch (NoSuchWindowException e) {
+            LOGGER.error("Invalid WIndow : reuseable function.switchToWindowByURL");
+            throw e;
+        }
+    }
+
+    // Method to switch to window by URL
+
+    // ----------------------Frame----------------------------------
+    // Method to switch to main HTML frame
+    public static void switchToMainFrame() {
+        try {
+            driver.switchTo().defaultContent();
+            LOGGER.info("Switched to main HTML page");
+        } catch (NoSuchFrameException e) {
+            LOGGER.error("Invalid Frame : reuseable function.switchToMainFrame");
+            throw e;
+        }
+    }
+
+    // Method to switch to main parent frame
+    public static void switchToParentFrame() {
+        try {
+            driver.switchTo().parentFrame();
+            LOGGER.info("Switched to parent page");
+        } catch (NoSuchFrameException e) {
+            LOGGER.error("Invalid Frame : reusable function.switchToParentFrame");
+            throw e;
+        }
+    }
+
+    public static void switchToFrameByindex(int index) {
+        try {
+            driver.switchTo().frame(index);
+            LOGGER.info("Switched to frame with index" + index);
+        } catch (NoSuchFrameException e) {
+            LOGGER.error("Invalid Frame : reusable function.switch To Frame By index");
+            throw e;
+        }
+    }
+
+    // Method to switchto frame by index
+
+    public static void switchToFrameByIdOrName(String iframeIdOrName) {
+        try {
+            driver.switchTo().frame(iframeIdOrName);
+            LOGGER.info("Switched to frame with iframe Id or Name as -> " + iframeIdOrName);
+        } catch (NoSuchFrameException e) {
+            LOGGER.error("Invalid Frame : reusable function switch To Frame By Id or Name");
+            throw e;
+        }
+    }
+
+    // Method to switchto frame by in or Name
+
+    public static void switchToFrameByWebElement(By locator) {
+        try {
+            WebElement elem = getElement(driver, locator);
+            if (elem != null) {
+                driver.switchTo().frame(elem);
+                LOGGER.info("Switched to frame with provider locator");
+            }
+        } catch (NoSuchFrameException e) {
+            LOGGER.error("Invalid Frame : reusable function switch To Frame By Id or Name");
+            throw e;
+        }
+    }
+
+    // Method to switch to frame by WebElement
+
+    // locator -> locator of frame
+
+    // Method to accept alert
+    public static void acceptAlertPopup() {
+        try {
+            Alert alert = driver.switchTo().alert();
+            alert.accept();
+        } catch (NoAlertPresentException e) {
+            LOGGER.error("Alert not found : reusable functions->acceptAlertPopup ");
+            throw e;
+        }
+    }
+
+    // ----------------------popup----------------------------------
+
+    // Method to dismiss alert
+    public static void dismissAlertPopup() {
+        try {
+            Alert alert = driver.switchTo().alert();
+            alert.dismiss();
+        } catch (NoAlertPresentException e) {
+            LOGGER.error("Alert not found : reusable functions->dismissAlertPopup ");
+            throw e;
+        }
+    }
+
+    // Prompt -> Message to be entered
+    public static void acceptAlertPromptPopup(String prompt) {
+        try {
+            Alert alert = driver.switchTo().alert();
+            alert.sendKeys(prompt);
+            alert.accept();
+        } catch (NoAlertPresentException e) {
+            LOGGER.error("Alert not found : reusable functions->acceptAlertPromptPopup ");
+            throw e;
+        }
+    }
+    // Method to accept alert with prompt message
+
+    public static String getAlertText() {
+        String alertText = "";
+        try {
+            Alert alert = driver.switchTo().alert();
+            alertText = alert.getText();
+            alert.accept();
+        } catch (NoAlertPresentException e) {
+            LOGGER.error("Alert not found : reusable functions->getAlertText ");
+            throw e;
+        }
+        return alertText;
+    }
+
+    // Method to get alert Text
+
+    public static void pageScrollUsingRobot(String navigation) throws AWTException {
+        try {
+            Robot robot = new Robot();
+            switch (navigation) {
+                case "up":
+                    robot.keyPress(KeyEvent.VK_PAGE_UP);
+                    robot.keyRelease(KeyEvent.VK_PAGE_UP);
+                    break;
+                case "down":
+                    robot.keyPress(KeyEvent.VK_PAGE_DOWN);
+                    robot.keyRelease(KeyEvent.VK_PAGE_DOWN);
+                    break;
+                default:
+            }
+        } catch (Exception e) {
+            LOGGER.error("Exception handled while scrolling using Robot Class -> pageScrollUsingRobot" + e);
+            throw e;
+        }
+    }
+
+    // ----------------------Robot----------------------------------
+
+    // Method to scroll up/down page using Robot class
+
+    // navigation -> way to scroll
+
+    public static void switchToNextTabUsingRobotClass() throws AWTException {
+        try {
+            Robot robot = new Robot();
+            robot.keyPress(KeyEvent.VK_CONTROL);
+            robot.keyRelease(KeyEvent.VK_TAB);
+            robot.keyPress(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_CONTROL);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled while swithing to next tab using Robot Class -> switchToNextTabUsingRobotClass" + e);
+            throw e;
+        }
+    }
+
+    // Method to switch to next tab using Robot class
+
+    public static void switchToPreviousTabUsingRobotClass() throws AWTException {
+        try {
+            Robot robot = new Robot();
+            robot.keyPress(KeyEvent.VK_CONTROL);
+            robot.keyPress(KeyEvent.VK_SHIFT);
+            robot.keyPress(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_SHIFT);
+            robot.keyRelease(KeyEvent.VK_CONTROL);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled while swithing to previous tab using Robot Class -> switchToPreviousTabUsingRobotClass" + e);
+            throw e;
+        }
+    }
+
+    // Method to switch to next tab using Robot class
+
+    public static void clickLeftMouseButton() throws AWTException {
+        try {
+            Robot robot = new Robot();
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled while while clicking left mouse button  using Robot Class -> clickLeftMouseButton" + e);
+            throw e;
+        }
+    }
+
+    // Method to click left mouse button
+    public static void clickRightMouseButton() throws AWTException {
+        try {
+            Robot robot = new Robot();
+            robot.mousePress(InputEvent.BUTTON2_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON2_DOWN_MASK);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled while while clicking right mouse button  using Robot Class -> clickRightMouseButton" + e);
+            throw e;
+        }
+    }
+
+    // Method to click right mouse button
+
+    public static void mouseHoverUsingRobotClass(int xDim, int yDim) throws AWTException {
+        try {
+            Robot robot = new Robot();
+            robot.mouseMove(xDim, yDim);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled while hoving using Robot Class -> mouseHoverUsingRobotClass" + e);
+            throw e;
+        }
+    }
+
+    // Method to hover using Robot class
+
+    // xDim -> dimension on x-axis
+    // yDim -> dimension on y-axis
+
+    public static void KeyPressArrowKeyUsingRobot(String keyName) {
+        try {
+            Robot robot = new Robot();
+            switch (keyName) {
+                case "keyUp":
+                    robot.keyPress(KeyEvent.VK_UP);
+                    break;
+                case "keyDown":
+                    robot.keyPress(KeyEvent.VK_DOWN);
+                    break;
+                case "keyLeft":
+                    robot.keyPress(KeyEvent.VK_LEFT);
+                    break;
+                case "keyRight":
+                    robot.keyPress(KeyEvent.VK_RIGHT);
+                    break;
+
+                default:
+                    LOGGER.info("No such arrow key exist");
+            }
+        } catch (Exception e) {
+            LOGGER.error("Exception handled while pressing arrow keys using Robot Class -> KeyPressArrowKeyUsingRobot" + e);
+        }
+    }
+
+    // Method to press arrow key using robot class
+    // keyName -> name of key to be pressed
+
+    public static boolean javaScriptClick(By locator) {
+        try {
+            LOGGER.info("Locating Element to click");
+            WebElement elem = getElement(driver, locator);
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("arguments[0].click();", elem);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptClick" + e);
+            throw e;
+        }
+        return true;
+
+    }
+
+    public static boolean javaScriptExecute(String s) {
+        try {
+            LOGGER.info("Locating Element to execute");
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript(s);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptClick" + e);
+            throw e;
+        }
+        return true;
+
+    }
+
+    public static String javaScriptExecuteString(String s) {
+        String s1="";
+        try {
+            LOGGER.info("Locating Element to execute");
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            s1=(String)js.executeScript(s);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptClick" + e);
+            throw e;
+        }
+        return s1;
+
+    }
+
+
+    // ------------------------JavaScriptExecutor---------------------
+
+    // Click by JavaScriptExecutor
+
+    public static List<WebElement> getallElements(By locator) {
+
+        try {
+            LOGGER.info("Locating element to be clickable");
+
+            List<WebElement> elem = getElements(driver, locator);
+            if (elem != null) {
+                return elem;
+            } else {
+                LOGGER.error("Element is not found for locator");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: waiting for visibility of getAllElements" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for  ->getallElements" + e);
+            throw e;
         }
         return null;
     }
-    // Method to covert input string date value to formatted date String value for eg - "2009-05-19"
-    //inputString -> Input String date value in format "19/05/2021"/
-    // return date value in simple Date Format 2009-05-19
 
-    public String getDataInYYYYMMDDFormat(String dd, String month, String yyyy) {
-        String month1 = getMonNUmber(month);
-        String day = dd;
-        if (Integer.parseInt(dd) < 9 && !dd.contains("0")) {
-            day = "0" + dd;
-        }
-        String date = yyyy + "-" + month1 + "-" + day;
-        return date;
-    }
+    // Method use for getting List of all web Elements
 
+    // locator -> it shows many values
+    // return -> List of WebElemnt or empty list
 
-    //Method to convert input String date value to formatted date String value for e.g "09 Jul 2021 (11:21 AM)"
-    //inputDate -> input string date value in format eg "2021-07-17T10:31:11.802950"
-    //return String date value in simplpe format "09 Jul 2021 (11:21 AM)"
-
-    public String getDataInDDMMYYYYFormat(String dd, String month, String yyyy) {
-        String day = dd;
-        if (Integer.parseInt(dd) < 9) {
-            day = "0" + dd;
-        }
-        String date = day + "/" + month + "/" + yyyy;
-        return date;
-    }
-
-    public static String getCurrentDateWithoutHrs() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        LOGGER.info("getCurrentTimeStamp in simple date format");
-        return sdf.format(new Date());
-    }
-}
-
-
-package common;
-
-//import API.APICommonUtility;
-
-import org.apache.log4j.Logger;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Properties;
-
-
-public class DataReaderUtillity {
-    //private static final Logger LOGGER = Logger.getLogger(DataReaderUtillity.class.getName());
-    private static final Logger LOGGER = Logger.getLogger(DataReaderUtillity.class.getName());
-    private static Properties prop;
-
-    //Getter Method of properties file object
-    public static Properties getProp() {
-        return prop;
-    }
-
-    //Getter Method of properties file object
-    public static void setProp(Properties prop) {
-        DataReaderUtillity.prop = prop;
-    }
-
-    public static final void loadProp() {
-        prop = new Properties();
+    public static void jsScrollToElement(By locator) {
         try {
-            String fileName = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main"
-                    + File.separator + "resources" + File.separator + "properties" + File.separator + "config.properties";
+            LOGGER.info("Locating Element to jsScrollToElemnt");
+            wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
+            WebElement elem = getElement(driver, locator);
 
-            prop.load(new FileInputStream(new File(fileName)));
-            setProp(prop);
-            LOGGER.info("Successful loaded properties file from" + fileName);
-
-            // set cookie value
-            LOGGER.info("Set Cookie value");
-//            APICommonUtility.setCookieVal(prop.getProperty("cookieValue"));
-//            LOGGER.info("Cookie Value:::"+prop.getProperty("cookieValue"));
-
-
-            if (prop.getProperty("isLocal").equalsIgnoreCase("true")) {
-//                APICommonUtility.setCookieVal(prop.getProperty("cookieValue"));
-                LOGGER.info("Cookie value set for local");
+            if (elem != null) {
+                JavascriptExecutor js = (JavascriptExecutor) driver;
+                js.executeScript("arguments[0].scrollIntoView();", elem);
             } else {
-//                APICommonUtility.setCookieVal(System.getenv("cookieValue"));
-                LOGGER.info("Cookie value set for Remote");
+                LOGGER.info("Element not found for JavaScriptExecutor");
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: jsScrollToElement" + e);
+            throw e;
         } catch (Exception e) {
-            e.printStackTrace();
-
+            LOGGER.error("Expected handled for jsScrollToElement" + e);
+            throw e;
         }
-
 
     }
 
-    // Method to laod any proeerty file
 
-    public static final void loadProp(String propFileName) {
-        prop = new Properties();
+
+    // Method to use JavaScriptExecutor scroll to specific element
+
+    // locator -> Scroll the page up to that Element visible on screen
+
+    public static void jsPageScrollDownSideByPixel(String pixel) {
         try {
-            LOGGER.info("Successful loaded properties file from" + propFileName);
-            String fileName = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main"
-                    + File.separator + "resources" + File.separator + "properties" + File.separator + propFileName;
-
-            prop.load(new FileInputStream(new File(fileName)));
-            setProp(prop);
-            LOGGER.info("Successful loaded properties file from" + fileName);
-
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.info("By using JavaScript Scrolling the page toward the down side based on provided pixel value :" + pixel);
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("window.scrollBy(0," + pixel + ")", "");
         } catch (Exception e) {
-            e.printStackTrace();
-
+            LOGGER.error("Expected handled for jsPageScrollDownSideByPixel" + e);
+            throw e;
         }
     }
+    // JavaScript Method use for page scroll to down side by providing pixel value
+
+    // pixel -> pixel value for scrolling the page vertically downside
+
+    public static void jsPageScrollUpSideByPixel(String pixel) {
+        try {
+            LOGGER.info("By using JavaScript Scrolling the page toward the down side based on provided pixel value :" + pixel);
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("window.scrollBy(0," + pixel + ")", "");
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for jsPageScrollDownSideByPixel" + e);
+            throw e;
+        }
+
+    }
+
+    // JavaScript Method use for page scroll to upward side by providing pixel value
+
+    // pixel -> pixel value for scrolling the page vertically upside
+
+    public static void jsPageScrolltoBottom() {
+        try {
+            LOGGER.info("By using JavaScript Scrolling up to Bottom");
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("window.scrollBy(0,document.body.scrollHeight)");
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for jsPageScrolltoBottom[" + e);
+            throw e;
+        }
+
+    }
+
+    // JavaScript Method use for page scroll to bottom
+
+    public static void jsPageScrolltoSpecific(String x, String y) {
+        try {
+            LOGGER.info("By using JavaScript Scrolling up to Bottom");
+            // JavascriptExecutor js = (JavascriptExecutor) driver;
+            ((JavascriptExecutor) driver).executeScript("window.scrollBy(" + x + "," + y + ")");
+            // js.executeScript("window.scrollBy(0,document.body.scrollHeight)");
+
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for jsPageScrolltoSpecific" + e);
+            throw e;
+        }
+
+    }
+
+    // JavaScript Method use for scrolling page to specific co-erdination on screen
+    // x-> Horizontal co-ordinate vale
+    // y-> Verical co-ordinate vale
+
+    public static void jsPageScrolltoLeftSideByPixel(String pixel) {
+        try {
+            LOGGER.info("By using JavaScript Scrolling up to Bottom");
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            ((JavascriptExecutor) driver).executeScript("window.scrollBy(-" + pixel + ",0)");
+
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for jsPageScrolltoLeftSideByPixel" + e);
+            throw e;
+        }
+
+    }
+
+    // JavaScript Method use for page scroll to horizontally to left side
+    // pixel-> value for scrolloing the page horizontally left side
+
+    public static void jsPageScrollToRightSideByPixel(String pixel) {
+        try {
+            LOGGER.info("By using JavaScript Scrolling up to Bottom");
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            ((JavascriptExecutor) driver).executeScript("window.scrollBy(" + pixel + ",0)");
+
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for jsPageScrolltoLeftSideByPixel" + e);
+            throw e;
+        }
+    }
+
+    public static void jsPageScrollToRightSideByPixelPopUp(By element,String pixel) {
+        try {
+            LOGGER.info("By using JavaScript Scrolling up to Bottom");
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("arguments[0].scrollLeft = arguments[1];",driver.findElement(element), pixel);
+
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for jsPageScrolltoLeftSideByPixel" + e);
+            throw e;
+        }
+    }
+
+    // JavaScript Method use for page scroll to horizontally to Right side
+    // pixel-> value for scrolloing the page horizontally Right side
+
+    public static void jsScrollToTop() {
+        LOGGER.info("JavaScript Scrollong to top");
+        JavascriptExecutor executor = (JavascriptExecutor) driver;
+        executor.executeScript("window.scrollTo(0,0)");
+    }
+
+    // Javascript method use for page scroll to extream top
+
+    public static void pageDown() {
+        try {
+            LOGGER.info("perform pagedown");
+            actions.sendKeys(Keys.PAGE_DOWN).build().perform();
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for page down ->" + e);
+            throw e;
+        }
+    }
+
+    public static void PageScrollRight() {
+        try {
+            LOGGER.info("perform page right scroll");
+            actions.moveByOffset(5000,0).build().perform();
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for page down ->" + e);
+            throw e;
+        }
+    }
+
+    // Method to perform page down by action class
+
+    // Method to perform page up by action class
+    public static void pageUp() {
+        try {
+            LOGGER.info("perform pageup");
+            actions.sendKeys(Keys.PAGE_UP).build().perform();
+
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for pageup ->" + e);
+            throw e;
+        }
+    }
+
+    public static void arrowDown() {
+        try {
+            LOGGER.info("Pressed arrowdown");
+            actions.sendKeys(Keys.ARROW_DOWN).build().perform();
+            waitforSeconds(2);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for arrow down ->" + e);
+            throw e;
+        }
+    }
+
+    // Method key perform Arrow key down/up/left/right action by using actions class
+
+    public static void arrowUp() {
+        try {
+            LOGGER.info("Pressed arrowUp");
+            actions.sendKeys(Keys.ARROW_UP).build().perform();
+
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for arrow up ->" + e);
+            throw e;
+        }
+    }
+
+    public static void arrowLeft() {
+        try {
+            LOGGER.info("Pressed arrowLeft");
+            actions.sendKeys(new CharSequence[]{Keys.ARROW_LEFT}).build().perform();
+            waitforSeconds(2);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for arrow left ->" + e);
+            throw e;
+        }
+    }
+
+    public static void arrowRight() {
+        try {
+            LOGGER.info("Pressed arrowRight");
+            actions.sendKeys(Keys.ARROW_RIGHT).build().perform();
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for arrow Right ->" + e);
+            throw e;
+        }
+    }
+
+    // Method to perform key tab action by using action class
+    public static void keyTab() {
+        try {
+            LOGGER.info("Pressed keyTab");
+            actions.sendKeys(Keys.TAB).build().perform();
+            waitforSeconds(2);
+
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for keytab ->" + e);
+            throw e;
+        }
+    }
+
+    // Method to perform backtab
+    public static void backTab() {
+        try {
+            LOGGER.info("Pressed backTab");
+            actions.sendKeys(Keys.TAB).keyUp(Keys.SHIFT).build().perform();
+            waitforSeconds(2);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for backtab ->" + e);
+            throw e;
+        }
+    }
+
+    public static void pageDownWithControlAndUpArrowByActionClass() {
+        try {
+            LOGGER.info("Pressed pageup");
+            actions.keyDown(Keys.CONTROL).sendKeys(Keys.UP).perform();
+            actions.keyDown(Keys.CONTROL).release().perform();
+        } catch (Exception e) {
+            LOGGER.error("pageDownWithControlAndDownArrowByActionClass ->" + e);
+            throw e;
+        }
+    }
+
+    // Methtod to perform press control key with Up arrow key together by using
+    // action class
+
+    public static void pageDownWithControlAndDownArrowByActionClass() {
+        try {
+            LOGGER.info("Pressed pagedown");
+            actions.keyDown(Keys.CONTROL).sendKeys(Keys.DOWN).perform();
+            actions.keyDown(Keys.CONTROL).release().perform();
+        } catch (Exception e) {
+            LOGGER.error("pageDownWithControlAndDownArrowByActionClass ->" + e);
+            throw e;
+        }
+    }
+
+//Methtod to perform press control key with Down arrow key together by using action class
+
+    public static void moveToElement(By locator) {
+        try {
+            LOGGER.info("Locating element to move to element");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            actions.moveToElement(elem).build().perform();
+            LOGGER.info("Moved to element pressed");
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for moveToElement" + e1);
+            throw e1;
+        }
+    }
+
+    public static void PageUp() {
+        try {
+            LOGGER.info("Locating element to move to element");
+            actions.sendKeys(Keys.PAGE_UP).build().perform();
+            LOGGER.info("Moved to element pressed");
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for moveToElement" + e1);
+            throw e1;
+        }
+    }
+
+    public static void PageDown() {
+        try {
+            LOGGER.info("Locating element to move to element");
+            actions.sendKeys(Keys.PAGE_DOWN).build().perform();
+            LOGGER.info("Moved to element pressed");
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for moveToElement" + e1);
+            throw e1;
+        }
+    }
+
+    public static void moveToElementClick(By locator) {
+        try {
+            LOGGER.info("Locating element to move to element");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            actions.moveToElement(elem).click().build().perform();
+            LOGGER.info("Moved to element pressed");
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for moveToElement" + e1);
+            throw e1;
+        }
+    }
+
+    // This Method moves the mouse to the middle of the element.
+    // The element is also scrolled into the view on performing this action
+
+    // locator -> locating the element
+
+    public static void release(By source, By target) {
+        try {
+            LOGGER.info("Performing the action of click hold source element and move to target element and release");
+            WebElement sourceEle = getElement(driver, source);
+            WebElement targetEle = getElement(driver, target);
+            // Actions actions = new Actions(driver);
+            actions.clickAndHold(sourceEle).moveToElement(targetEle).build().perform();
+            actions.release().build().perform();
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for release" + e1);
+            throw e1;
+        }
+    }
+
+    // This action release the depressed left mouse button if element is ppased ,
+    // it will release depressed left mouse button on the given target
+
+    // source -> source Element
+    // target -> target Element
+
+    public static String getCSSValue(By locator, String cssPropertyName) {
+        String cssValue = null;
+        try {
+            LOGGER.info("Locating element to get css value");
+            wait.until(ExpectedConditions.visibilityOfAllElementsLocatedBy(locator));
+            WebElement elem = getElement(driver, locator);
+            cssValue = elem.getCssValue(cssPropertyName);
+            LOGGER.info("Element Having CSS:::" + cssPropertyName + "value:::" + cssValue);
+
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for getCSSValue" + e1);
+            throw e1;
+        }
+        return cssValue;
+    }
+
+    // This method used for getting any css properly value by providing locator and
+    // property name
+    // locator -> Locating Element
+    // CSSPropertyName -> css propertyName
+
+    /**
+     * Get the difference between two List as String format /* firstList -> provide
+     * first Ust far comparison secondList -> -> provide second Ust for comparison *
+     *
+     * @return-> list of difference found in bothUst
+     */
+
+    public static List<String> differenceBetweenTwoArraYListInString(List<String> firstlist, List<String> secondList) {
+        List<String> result1, result2;
+        result1 = secondList.stream().filter(elem -> firstlist.contains(elem)).collect(Collectors.toList());
+        result2 = firstlist.stream().filter(elem -> secondList.contains(elem)).collect(Collectors.toList());
+        List<String> finalDifference = Stream.concat(result1.stream(), result2.stream()).collect(Collectors.toList());
+        LOGGER.info("Difference between both list are:" + finalDifference);
+        return finalDifference;
+    }
+
+    public static List<Integer> differenceBetweenTwoArraYListInInteger(List<Integer> firstlist, List<Integer> secondList) {
+        List<Integer> result1, result2;
+        result1 = secondList.stream().filter(elem -> firstlist.contains(elem)).collect(Collectors.toList());
+        result2 = firstlist.stream().filter(elem -> secondList.contains(elem)).collect(Collectors.toList());
+        List<Integer> finalDifference = Stream.concat(result1.stream(), result2.stream()).collect(Collectors.toList());
+        LOGGER.info("Difference between both list are:" + finalDifference);
+        return finalDifference;
+    }
+
+    static Boolean comparisonTwoMaps(Map<String, String> map1, Map<String, String> map2) {
+        try {
+            LOGGER.info("Compare Two Maps");
+            for (String k : map2.keySet()) {
+                if (!map1.get(k).equals(map2.get(k))) {
+                    return false;
+                }
+            }
+            for (String y : map1.keySet()) {
+                if (!map2.containsKey(y)) {
+                    return false;
+                }
+            }
+        } catch (NullPointerException e) {
+            LOGGER.error("NullPointerException :Issue in Compare two maps");
+            return false;
+        }
+        return true;
+    }
+
+    // Get the difference between two list as integer format
+
+    /*
+     * firstList -> provide first Ust far comparison secondList -> -> provide second
+     * Ust for comparison *
+     *
+     * @return-> list of difference found in bothUst
+     */
+
+    public static boolean isFileDownloaded(String downloadPath, String fileName) {
+        File dir = new File(downloadPath);
+        File[] dirContents = dir.listFiles();
+        for (int i = 0; i < dirContents.length; i++) {
+            if (dirContents[i].getName().equals(fileName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Get the difference between two maps
+
+    /*
+     * firstList -> provide first map data secondList -> -> provide second map daya
+     * *
+     *
+     * @return-> bollean value based on both map comparison
+     */
+
+    public static boolean isFileDownloadedWithExt(String dirpath, String ext) {
+        File dir = new File(dirpath);
+        File[] files = dir.listFiles();
+        if (files == null || files.length == 0) {
+            return false;
+        }
+        for (int i = 1; i <= files.length; i++) {
+            if (files[i].getName().contains(ext)) {
+                LOGGER.info("File downloaded with same extension" + ext);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Tessarac library to capture image based automation
+
+    // x-coordinate -> x co-ordinate upto which the image needs to capture
+    // y-coordinate -> y co-ordinate upto which the image needs to capture
+
+    // width -> width upto which image needs to be captured
+    // height -> height upto which image needs to be captured
+
+//    public static String captureImageOnCanvas(int xCoordinate,int yCoordinate,int width,int height)
+//    {
+//        String text = null;
+//        try {
+//            File screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
+//            BufferedImage fullImg = ImageIO.read(screenshot);
+//            BufferedImage eleScreenshot = fullImg.getSubimage(xCoordinate,yCoordinate,width,height);
+//            ImageIO.write(eleScreenshot,"png",screenshot);
+//            ITesseract image = new Tesseract();
+//            image.setDatapath(System.getProperty("user.dir")+File.separator+"src"+File.separator+"main"
+//                    +File.separator+"resources"+ File.separator+"tessractdata");
+//
+//            text = image.doOCR(screenshot);
+//            File imagewithpath = new File("src"+File.separator+"src"+File.separator+"main"
+//                    +File.separator+"resources"+ File.separator+"tessractdata");
+//
+//            FileUtils.copyFile(screenshot,imagewithpath);
+//
+//
+//        }
+//        catch (IOException | TesseractException e)
+//        {
+//            //e.printStackTrace();
+//            LOGGER.error("Failed to capture image...");
+//        }
+//        return text;
+//
+//    }
+
+    // Check the file is downloaded from a specific directory with file Name
+    // download path -> download path
+    // fileName -> file Name to be checked
+
+    public static File getLatestFileFromDir(String dirpath) {
+        File dir = new File(dirpath);
+        File[] files = dir.listFiles();
+        if (files == null || files.length == 0) {
+            return null;
+        }
+        File lastModifiedfiles = files[0];
+        for (int i = 1; i <= files.length; i++) {
+            if (lastModifiedfiles.lastModified() < files[i].lastModified()) {
+                lastModifiedfiles = files[i];
+            }
+        }
+        return lastModifiedfiles;
+    }
+
+    // Check the file from a Specific directory with Extension
+    // dirpath -> directory path
+    // ext -> extension of file to be checked
+
+    public static void globalClickFunction(String type, String locator) {
+        DataReaderUtillity.loadProp("locators.properties");
+        switch (type) {
+            case "id":
+                driver.findElement(By.id(DataReaderUtillity.getProp().getProperty(locator))).click();
+                break;
+            case "className":
+                driver.findElement(By.className(DataReaderUtillity.getProp().getProperty(locator))).click();
+                break;
+            case "name":
+                driver.findElement(By.name(DataReaderUtillity.getProp().getProperty(locator))).click();
+                break;
+            case "tagName":
+                driver.findElement(By.tagName(DataReaderUtillity.getProp().getProperty(locator))).click();
+                break;
+            case "linkText":
+                driver.findElement(By.linkText(DataReaderUtillity.getProp().getProperty(locator))).click();
+                break;
+            case "partText":
+                driver.findElement(By.partialLinkText(DataReaderUtillity.getProp().getProperty(locator))).click();
+                break;
+            default:
+                driver.findElement(By.xpath(locator)).click();
+        }
+
+    }
+
+    // Get the latest file from specific directory
+    // dirpath -> directory path
+
+    public static void globalsendKeysFunction(String type, String locator, String text) {
+        DataReaderUtillity.loadProp("locators.properties");
+        switch (type) {
+            case "id":
+                driver.findElement(By.id(DataReaderUtillity.getProp().getProperty(locator))).sendKeys(text);
+                break;
+            case "className":
+                driver.findElement(By.className(DataReaderUtillity.getProp().getProperty(locator))).sendKeys(text);
+                break;
+            case "name":
+                driver.findElement(By.name(DataReaderUtillity.getProp().getProperty(locator))).sendKeys(text);
+                break;
+            case "tagName":
+                driver.findElement(By.tagName(DataReaderUtillity.getProp().getProperty(locator))).sendKeys(text);
+                break;
+            case "linkText":
+                driver.findElement(By.linkText(DataReaderUtillity.getProp().getProperty(locator))).sendKeys(text);
+                break;
+            case "partText":
+                driver.findElement(By.partialLinkText(DataReaderUtillity.getProp().getProperty(locator))).sendKeys(text);
+                break;
+            default:
+                driver.findElement(By.xpath(locator)).sendKeys(text);
+        }
+
+    }
+
+    // Global link finction to click any elemnt as per the locator type
+    // type -> type of the locator
+    // locator -> locator value (Xpath, css etc)
+
+    public static void globalClearTextFunction(String type, String locator, String text) {
+        DataReaderUtillity.loadProp("locators.properties");
+        switch (type) {
+            case "id":
+                driver.findElement(By.id(DataReaderUtillity.getProp().getProperty(locator))).clear();
+                break;
+            case "className":
+                driver.findElement(By.className(DataReaderUtillity.getProp().getProperty(locator))).clear();
+                break;
+            case "name":
+                driver.findElement(By.name(DataReaderUtillity.getProp().getProperty(locator))).clear();
+                break;
+            case "tagName":
+                driver.findElement(By.tagName(DataReaderUtillity.getProp().getProperty(locator))).clear();
+                break;
+            case "linkText":
+                driver.findElement(By.linkText(DataReaderUtillity.getProp().getProperty(locator))).clear();
+                break;
+            case "partText":
+                driver.findElement(By.partialLinkText(DataReaderUtillity.getProp().getProperty(locator))).clear();
+                break;
+            default:
+                driver.findElement(By.xpath(locator)).clear();
+        }
+
+    }
+
+    // Global send keys finction to click any elemnt as per the locator type
+    // type -> type of the locator
+    // locator -> locator value (Xpath, css etc)
+    // text -> text to be entered
+
+    public static void verifyLinks(String linkUrl, int milliSecondConnectionTimeOut) throws IOException {
+        try {
+            URL url = new URL(linkUrl);
+            HttpURLConnection httpURLConnect = (HttpURLConnection) url.openConnection();
+            httpURLConnect.setConnectTimeout(milliSecondConnectionTimeOut);
+            httpURLConnect.connect();
+            if (httpURLConnect.getResponseCode() >= 400) {
+                LOGGER.info(linkUrl + "-" + httpURLConnect.getResponseMessage() + "is a broken link");
+            } else {
+                LOGGER.info(linkUrl + "-" + httpURLConnect.getResponseMessage() + "is a valid link");
+            }
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for ->verifyLinks" + e);
+            throw e;
+        }
+    }
+    // Global clear text finction to click any elemnt as per the locator type
+    // type -> type of the locator
+    // locator -> locator value (Xpath, css etc)
+
+    public static void printAllBrokenLinksFromPage(int millSecondTimeOut) throws IOException {
+        List<WebElement> links = driver.findElements(By.tagName("a"));
+        LOGGER.info("Total No of links are:::" + links);
+        for (int i = 0; i < links.size(); i++) {
+            WebElement webElement = links.get(i);
+            String url = webElement.getAttribute("href");
+            verifyLinks(url, millSecondTimeOut);
+        }
+    }
+
+    // This method created to identify whether link is valid or broken
+    // linkURL -> Provide link href value
+    // milliSecondConnectionTimeOut -> provide connection time out with milisecond
+
+    // This method refresh the page
+    public static void pageRefresh() {
+        driver.navigate().refresh();
+    }
+
+    // wait for page to load via java Script
+    // TimeoutInSec
+
+    // word-> to be search
+    // sentense -> to be search in sentense
+    public static void patternSearch(String word, String sentense) {
+        try {
+            LOGGER.info(word + "needs to search in" + sentense);
+            Pattern pattern = Pattern.compile(word, Pattern.CASE_INSENSITIVE);
+            Matcher matcher = pattern.matcher(sentense);
+            boolean matchfound = matcher.find();
+            if (matchfound) {
+                LOGGER.info("Matchfound" + word + "in" + sentense);
+            } else {
+                LOGGER.info("Match not found" + word + "in" + sentense);
+            }
+        } catch (Exception e) {
+            LOGGER.info("Exception handled for:::patternSearch" + e);
+            throw e;
+        }
+
+    }
+
+    // THis method will print all the broken links
+
+    // milisecondConnectionTimeOut -> Provide connection Timeout in milisecond
+
+    public void mouseHoverJscript(By locator) {
+        WebElement hoverEle = getElement(driver, locator);
+        try {
+            if (isElementPresent(locator)) {
+                String mouseOverScript = "if(document.createEvent){var evObj = document.createEvent('MouseEvents');" + "evObj.initEvent('mouseover', true, false); arguments[0].dispatchEvent(evObj);} else if(document.createEventObject) { arguments[0].fireEvent('onmouseover');}";
+                ((JavascriptExecutor) driver).executeScript(mouseOverScript, hoverEle);
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Exception occured for -> mouseHoverJscript" + e);
+            throw e;
+        }
+    }
+
+    /**
+     * This method use for resizing a lVeb element using moveblJoffset * @Poram
+     * e1.ementToResize -> Locating we.b element to resize
+     *
+     * @parom xOffset -> horizontal offset ..
+     * @Param yOffset - > vertical offset
+     */
+
+    public void resize(WebElement elementToResize, int xOffset, int yOffset) {
+        try {
+            LOGGER.info("Cnperforming resizing a web etement using move by offset");
+            if (elementToResize.isDisplayed()) {
+                // Actions action = new Actions(driver);
+                actions.clickAndHold(elementToResize).moveByOffset(xOffset, yOffset).release().build().perform();
+
+            } else {
+                LOGGER.error("Element was not displayed to drag");
+            }
+        } catch (Exception e) {
+            LOGGER.error("Unable to resize" + elementToResize + "-" + e);
+            throw e;
+        }
+    }
+
+    // This method returns there are any occurns of the word
+
+    public void jsWaitForPageLoad(int timeOutSecond) {
+        JavascriptExecutor js = (JavascriptExecutor) driver;
+        String jsCommand = "return document.readyState";
+        if (js.executeScript(jsCommand).toString().equals("complete")) {
+            return;
+        }
+        for (int i = 0; i < timeOutSecond; i++) {
+            waitforSeconds(1);
+            if (js.executeScript(jsCommand).toString().equals("complete")) {
+                break;
+            }
+        }
+    }
+
+    // to get the list of the browser tabs
+    public static Boolean listOfBrowserTabs() {
+        try {
+            String parentWindow = driver.getWindowHandle();
+            Set<String> setWindow = driver.getWindowHandles();
+            for (String childWindow : setWindow) {
+                if (!parentWindow.equalsIgnoreCase(childWindow)) {
+                    driver.switchTo().window(childWindow);
+                    LOGGER.info("Navigated to a different page other than the parent page");
+                    driver.close();
+                }
+                driver.switchTo().window(parentWindow);
+                LOGGER.info("Navigated to Main Window");
+            }
+        } catch (Exception e) {
+            LOGGER.error("Expected condition failed: " + e);
+            throw e;
+        }
+        return true;
+    }
+
+    // jsScrollToElement with WebElement Parameter
+    public static void jsScrollToElement(WebElement elem) {
+        try {
+            LOGGER.info("Locating Element to jsScrollToElemnt");
+
+            if (elem != null) {
+                JavascriptExecutor js = (JavascriptExecutor) driver;
+                js.executeScript("arguments[0].scrollIntoView();", elem);
+            } else {
+                LOGGER.info("Element not found for JavaScriptExecutor");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: jsScrollToElement" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for jsScrollToElement" + e);
+            throw e;
+        }
+    }
+
+    //
+
+    public static void highlightWebElement(WebElement elem) {
+        try {
+            LOGGER.info("Locating Element to jsScrollToElement");
+
+            if (elem != null) {
+                if (driver instanceof JavascriptExecutor) {
+                    JavascriptExecutor js = (JavascriptExecutor) driver;
+                    js.executeScript("arguments[0].style.border='3px solid red'", elem);
+
+                }
+            } else {
+                LOGGER.info("Element not found for JavaScriptExecutor");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: jsScrollToElement" + e);
+            throw e;
+
+        } catch (Exception e) {
+            LOGGER.error("Exception hadled for getscreenshot" + e);
+            throw e;
+        }
+
+    }
+
+    public static void highlightWebElement(By locator) {
+        WebElement hoverEle = getElement(driver, locator);
+        try {
+            LOGGER.info("Locating Element to Highlight");
+
+            if (hoverEle != null) {
+                JavascriptExecutor js = (JavascriptExecutor) driver;
+                js.executeScript("arguments[0].style.border='2px solid red'", hoverEle);
+            } else {
+                LOGGER.info("Element not found for JavaScriptExecutor");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: Highlight" + e);
+
+
+        } catch (Exception e) {
+            LOGGER.error("Expected handled to Highlight" + e);
+        }
+
+    }
+
+    public static void unHighlightWebElement(WebElement elem) {
+        try {
+            LOGGER.info("Locating Element to jsScrollToElement");
+
+            if (elem != null) {
+                if (driver instanceof JavascriptExecutor) {
+                    JavascriptExecutor js = (JavascriptExecutor) driver;
+                    js.executeScript("arguments[0].style.border=''", elem);
+                }
+            } else {
+                LOGGER.info("Element not found for JavaScriptExecutor");
+            }
+        } catch (TimeoutException e) {
+            LOGGER.error("Expected condition failed: jsScrollToElement" + e);
+            throw e;
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for jsScrollToElement" + e);
+            throw e;
+        }
+    }
+
+    public static WebElement getWebElement(By locator) {
+        final int maxAttempts = 2;
+        for (int i = 1; i <= maxAttempts; i++) {
+            try {
+                WebElement elem = getElement(driver, locator);
+                LOGGER.info("Searching for an Element");
+                return driver.findElement(locator);
+            } catch (StaleElementReferenceException e) {
+                LOGGER.error("Reattempt to find Element" + e);
+                throw e;
+            } catch (Exception e) {
+                LOGGER.error("Unable to locate the Element" + e);
+                throw e;
+            }
+        }
+        return null;
+
+    }
+
+    public static boolean nonEditableCheck(By locator, String text) {
+        WebElement elem = getElement(driver, locator);
+        String elemText = elem.getText();
+        LOGGER.info("Old Element Text is" + elemText);
+        try {
+            elem.sendKeys(text);
+            elemText = elem.getText();
+            if (elemText.equals(text)) return false;
+            else return true;
+        } catch (WebDriverException wde) {
+            LOGGER.info("Element is non editable");
+            return true;
+        }
+    }
+
+    public static void moveToElementbyElem(WebElement elem) {
+        try {
+            LOGGER.info("Locating element to move to element");
+            actions.moveToElement(elem).build().perform();
+            LOGGER.info("Moved to element pressed");
+        } catch (TimeoutException e) {
+            LOGGER.error("TimeoutException");
+            throw e;
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for moveToElement");
+            throw e1;
+        }
+    }
+
+    public static String getCssAtrributeFontSize(By locator) {
+        String fontSize;
+        try {
+            WebElement elem = getElement(driver, locator);
+            fontSize = elem.getCssValue("font-size");
+            LOGGER.info("Font Size of the element is " + fontSize);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+        return fontSize;
+    }
+
+    public static String getCssAttributeFontFamily(By locator) {
+        String fontFamily;
+        try {
+            WebElement elem = getElement(driver, locator);
+            fontFamily = elem.getCssValue("font-family");
+            LOGGER.info("Font Size of the element is " + fontFamily);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+        return fontFamily;
+    }
+
+    public static String getCssAtrributeFontColor(By locator) {
+        String colorHex;
+        try {
+            WebElement elem = getElement(driver, locator);
+            String color = elem.getCssValue("color");
+            colorHex = Color.fromString(color).asHex();
+            LOGGER.info("Font Color of the element is " + color);
+            LOGGER.info("Font Color of the element is " + colorHex);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+        return colorHex;
+    }
+
+    public static String getCssAtrributeBackgroundColor(By locator) {
+        String backGroundColor = "";
+        try {
+            WebElement elem = getElement(driver, locator);
+            backGroundColor = elem.getCssValue("background-color");
+            LOGGER.info("BackGround color of the element is " + backGroundColor);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+        return backGroundColor;
+    }
+
+
+    public static void getCssAttributesHeightAndWidth(By locator) {
+        try {
+            WebElement elem = getElement(driver, locator);
+            Dimension size = elem.getSize();
+            int Width = size.getWidth();
+            int Height = size.getHeight();
+            LOGGER.info("Width of the element is " + Width);
+            LOGGER.info("Height of the element is " + Height);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+    }
+
+    public static void getCssAttributePaddingLeftAndRight(By locator) {
+        try {
+            WebElement elem = getElement(driver, locator);
+            String PaddingLeft = elem.getCssValue("padding-left");
+            String PaddingRight = elem.getCssValue("padding-right");
+            LOGGER.info("Top padding of the element is " + PaddingLeft);
+            LOGGER.info("Bottom padding of the element is " + PaddingRight);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+    }
+
+    public static String getCssAtrributeAligment(By locator) {
+        String alignment = "";
+        try {
+            WebElement elem = getElement(driver, locator);
+            alignment = elem.getCssValue("text-align");
+            LOGGER.info("Alignment of the element is " + alignment);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+        return alignment;
+    }
+
+    public static boolean isClickable(By locator) {
+        try {
+            WebElement elem = getElement(driver, locator);
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("arguments[0].click();", elem);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptClick" + e);
+            throw e;
+        }
+        return true;
+    }
+
+
+    public static boolean pageReload() {
+        try {
+            JavascriptExecutor js = (JavascriptExecutor)driver;
+            js.executeScript("history.go(0)");
+        } catch (Exception e) {
+            LOGGER.error("Page Reload failed" + e);
+            throw e;
+        }
+        return true;
+    }
+
+    public static String getCssAtrributeFontColorRGB(By locator) {
+        String colorRgb;
+        try {
+            WebElement elem = getElement(driver, locator);
+            String color = elem.getCssValue("color");
+            colorRgb = Color.fromString(color).asRgb();
+            LOGGER.info("Font Color of the element is " + color);
+            LOGGER.info("Font Color of the element is " + colorRgb);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+        return colorRgb;
+    }
+
+    public static boolean javaScriptClickbyElem(WebElement elem) {
+        try {
+            LOGGER.info("Locating Element to click");
+            // WebElement elem = getElement(driver, locator);
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("arguments[0].click();", elem);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptClick by Element" + e);
+            throw e;
+        }
+        return true;
+    }
+
+
+    public static Boolean javaScriptCleartextByPath(String Path) {
+        try {
+            LOGGER.info("Locating Element to Set Text :" + Path );
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript(Path);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+        return true;
+    }
+
+    public static boolean javaScriptEmptyValue(By elem) {
+        try {
+            LOGGER.info("Locating Element to click");
+            // WebElement elem = getElement(driver, locator);
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("arguments[0].value = '';", driver.findElement(elem));
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptClick by Element" + e);
+            throw e;
+        }
+        return true;
+    }
+
+    public static boolean javaScriptEnterValue(By elem,String value) {
+        try {
+            LOGGER.info("Locating Element to click");
+            // WebElement elem = getElement(driver, locator);
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("arguments[0].value = '"+value+"';", driver.findElement(elem));
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptClick by Element" + e);
+            throw e;
+        }
+        return true;
+    }
+
+    public static String javaScriptGetText(By elem) {
+        String elementText;
+        try {
+            LOGGER.info("Locating Element to click");
+            // WebElement elem = getElement(driver, locator);
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            elementText = (String) js.executeScript("return arguments[0].firstChild.textContent;", elem);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptClick by Element" + e);
+            throw e;
+        }
+        return elementText;
+    }
+
+    public static String javaScriptFetchValue(String Path) {
+        String str=null;
+        try {
+            LOGGER.info("Locating Element to Set Text :" + Path );
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            str= (String) js.executeScript(String.format(Path));
+            System.out.println(str);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+        return str;
+    }
+
+
+
+    public static boolean isClickablebyElem(WebElement elem) {
+        try {
+            elem.click();
+            return true;
+        } catch (Exception e) {
+            LOGGER.error("Exception hadled for getscreenshot" + e);
+            throw e;
+        }
+    }
+
+    public static void navigateBack() {
+        driver.navigate().back();
+    }
+
+    public static WebElement getWebElementException(By locator) {
+        LOGGER.info("Searching for an Element");
+        try {
+            return driver.findElement(locator);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    //Method is created for list of WebElement/WebElement
+    public static boolean textNonEditable(WebElement elem, String text) {
+        Boolean flag;
+        try {
+            elem.sendKeys(text);
+            String elemText = elem.getText();
+            if (elemText.equals(text)) {
+                flag = false;
+            } else {
+                flag = true;
+            }
+        } catch (WebDriverException wde) {
+            LOGGER.info("Element is non editable");
+            flag = true;
+        }
+        return flag;
+    }
+
+    public static String getCssAtrributeFontColorForElem(WebElement elem) {
+        String colorHex;
+        try {
+            String color = elem.getCssValue("color");
+            colorHex = Color.fromString(color).asHex();
+            LOGGER.info("Font Color of the element is " + color);
+            LOGGER.info("Font Color of the element is " + colorHex);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+        return colorHex;
+    }
+
+    public static void keySpaceBar() {
+        try {
+            LOGGER.info("Pressed key Spacebar");
+            actions.sendKeys(Keys.SPACE).build().perform();
+            waitforSeconds(2);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for keySpace ->" + e);
+            throw e;
+        }
+    }
+
+    //Method is created for list of WebElement/WebElement
+    public static String getRGBColor(WebElement elem) {
+        String colorRgb;
+        try {
+            String color = elem.getCssValue("color");
+            colorRgb = Color.fromString(color).asRgb();
+            LOGGER.info("Font Color of the element is " + color);
+            LOGGER.info("Font Color of the element is " + colorRgb);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+        return colorRgb;
+    }
+
+    //Method is created for list of WebElement/WebElement
+    public static String getCssAttributeValue(WebElement elem, String attributeName) {
+        String BackGroundColor;
+        try {
+            BackGroundColor = elem.getCssValue(attributeName);
+            LOGGER.info("BackGround color of the element is " + BackGroundColor);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+        return BackGroundColor;
+    }
+
+    public static void waitForMilliSeconds(long ms) {
+        try {
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("ActionHandler.wait for Milliseconds -> sleep for seconds" + ms);
+            }
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            LOGGER.error("InterruptedException for action handler wait for MilliSeconds" + e);
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    public static String getCurrentURL() {
+        try {
+            LOGGER.info("get URL of page");
+            return driver.getCurrentUrl();
+        } catch (TimeoutException e) {
+            LOGGER.error("Get URL" + e);
+            throw e;
+        } catch (Exception e1) {
+            LOGGER.error("Exception handled for getURL" + e1);
+            throw e1;
+        }
+    }
+
+    public static String getCssAttributeValueHexCode(WebElement elem, String attributeName) {
+        String colorHex;
+        try {
+            String BottomColor = elem.getCssValue(attributeName);
+            colorHex = Color.fromString(BottomColor).asHex();
+            LOGGER.info("Bottom color of the element is " + colorHex);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+        return colorHex;
+    }
+
+    public static void keyESCAPE() {
+        try {
+            LOGGER.info("Pressed keyEscape");
+            actions.sendKeys(Keys.ESCAPE).build().perform();
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for Esc ->" + e);
+            throw e;
+        }
+    }
+
+    public static void closeTabOrWindow() {
+        driver.close();
+    }
+
+
+    public static String switchToWindowGetURL() {
+        String url = null;
+        try {
+            String parentWindow = driver.getWindowHandle();
+            Set<String> setWindow = driver.getWindowHandles();
+            for (String childWindow : setWindow) {
+                if (!parentWindow.equalsIgnoreCase(childWindow)) {
+                    driver.switchTo().window(childWindow);
+                    url = UICommonUtility.getCurrentURL();
+                    LOGGER.info("Navigated to a different page other than the parent page ");
+                    driver.close();
+                }
+                driver.switchTo().window(parentWindow);
+                LOGGER.info("Navigated to Main Window");
+            }
+        } catch (Exception e) {
+            LOGGER.error("Expected condition failed: " + e);
+            throw e;
+        }
+        return url;
+    }
+
+    public static void pageEnd() {
+        try {
+            LOGGER.info("Pressed page bottom");
+            actions.keyDown(Keys.CONTROL).sendKeys(Keys.END).perform();
+            actions.keyDown(Keys.CONTROL).release().perform();
+            waitforSeconds(2);
+        } catch (Exception e) {
+            LOGGER.error("Exception handled for pagebottom ->" + e);
+            throw e;
+        }
+    }
+
+    public static String getCssAttributesHeightAndWidthByElem(WebElement elem) {
+        String Height;
+        try {
+            Dimension size = elem.getSize();
+            int Width = size.getWidth();
+            Height = String.valueOf(size.getHeight());
+            LOGGER.info("Width of the element is " + Width);
+            LOGGER.info("Height of the element is " + Height);
+        } catch (Exception e) {
+            LOGGER.error("Unable to locate the Element" + e);
+            throw e;
+        }
+        return Height;
+    }
+
+    public static boolean verifyIsClickable(WebElement elem) {
+        Boolean flag = false;
+        try {
+            String hrefAttribute = elem.getAttribute("href");
+            if (!hrefAttribute.equalsIgnoreCase("")) LOGGER.info("Element is clickable");
+            {
+                LOGGER.info("Element is clickable");
+                flag = true;
+            }
+        } catch (Exception e) {
+            LOGGER.info("Element is not clickable");
+            flag = false;
+        }
+        return flag;
+    }
+
+    public static boolean ElementNotPresent(By locator) {
+        try {
+            WebElement webElement = driver.findElement(locator);
+            if (webElement.getSize() != null) {
+                LOGGER.error("Element is present on the page");
+                return true;
+            }
+        } catch (Exception e) {
+            LOGGER.info("Element is not present on the page");
+            return false;
+        }
+        return false;
+    }
+
+    public static String javaScriptCaptureValue(String element2) {
+
+        try {
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            str1 = (String) js.executeScript(element2);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+        return str1;
+    }
+
+    public static void javaScriptWindowFocus(String element) {
+
+        try {
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript(element);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+    }
+
+    public static String javaScriptEnterValue(String id,String element) {
+
+        try {
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            js.executeScript("document.getElementById('"+id+"').value='"+element+"'");
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+        return str1;
+    }
+
+    public static String JSGetValue(By element2)
+    {
+        try {
+            WebElement element=driver.findElement(element2);
+            JavascriptExecutor js = (JavascriptExecutor) driver;
+            str1 = (String) js.executeScript("return arguments[0].value", element);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+        return str1;
+    }
+
+    public static int getRowCount(By by)
+    {
+        int count;
+        try {
+            count=driver.findElements(by).size();
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+        return count;
+    }
+
+    public static void LaunchSSOURL()
+    {
+        try {
+            driver.get("https://rssandbox.webcomcpq.com/fed/toyotanorthamerica_tst");
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+    }
+
+    public static void LaunchSalesRepURL()
+    {
+        try {
+            driver.get(DataReaderUtillity.getProp().getProperty("url"));
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+    }
+
+    public static void LaunchEnterprisePortalOppurtunityURL()
+    {
+        try {
+            driver.get(DataReaderUtillity.getProp().getProperty("url_EnterprisePortalOppurtunity"));
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+    }
+
+    public static void EnterprisePortalURL()
+    {
+        try {
+            driver.get(DataReaderUtillity.getProp().getProperty("url_EnterprisePortal"));
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+    }
+
+    public static void LaunchOutlookURL()
+    {
+        try {
+            UICommonUtility.waitforSeconds(3);
+            driver.get(DataReaderUtillity.getProp().getProperty("url_Outlook"));
+            UICommonUtility.waitforSeconds(5);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+    }
+
+    public static void LaunchEnterpriseURL()
+    {
+        try {
+            UICommonUtility.waitforSeconds(3);
+            driver.get(DataReaderUtillity.getProp().getProperty("url_EnterprisePortal"));
+            UICommonUtility.waitforSeconds(5);
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+    }
+
+    public static void LaunchCRMURL() throws FindFailed {
+        try {
+
+                driver.get(DataReaderUtillity.getProp().getProperty("url_CRM"));
+
+        } catch (Exception e) {
+            LOGGER.error("Expected handled for javaScriptSetText by Element" + e);
+            throw e;
+        }
+    }
+
 
 
 }
