@@ -1,0 +1,1403 @@
+package common;
+
+import org.apache.log4j.Logger;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.NumberToTextConverter;
+import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
+import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
+import org.apache.poi.xwpf.usermodel.*;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.regex.Pattern;
+
+public class FileUtility {
+    private static final Logger LOGGER = Logger.getLogger(FileUtility.class.getName());
+
+    //This method use for fetch the excel sheet data
+    //filepath -> provide .xlxs file path
+    //sheetName -> provide sheetname
+    //return Excel sheet data
+
+    public static Object[][] readDataFromExcel(String filePath, String sheetName) {
+        File file;
+        Object[][] objects = null;
+
+        try {
+            LOGGER.info("Read the Excel data in object Array");
+            file = new File(filePath);
+            FileInputStream fis = new FileInputStream(file);
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            XSSFSheet testdata = workbook.getSheet(sheetName);
+            objects = new Object[testdata.getLastRowNum()][];
+
+            for (int i = 1; i < testdata.getLastRowNum(); i++) {
+                objects[i - 1] = new Object[testdata.getRow(i).getPhysicalNumberOfCells()];
+
+                for (int j = 0; j < testdata.getRow(i).getPhysicalNumberOfCells(); j++) {
+                    Cell cell = testdata.getRow(i).getCell(j);
+                    switch (cell.getCellType()) {
+                        case STRING:
+                            objects[i - 1][j] = testdata.getRow(i).getCell(j).getStringCellValue();
+                            break;
+                        case NUMERIC:
+                            objects[i - 1][j] = testdata.getRow(i).getCell(j).getStringCellValue();
+                            break;
+                        default:
+
+                            break;
+                    }
+                }
+            }
+            workbook.close();
+            fis.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            LOGGER.info("FileNotFoundException: issue is in readDataFromExcel");
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOGGER.info("IOException: issue is in readDataFromExcel");
+        }
+        return objects;
+    }
+
+
+    //This method use for fetch the first excel sheet data
+    //filepath -> provide .xlxs file path
+
+    //return Excel sheet data
+
+    public static String getCellValueInExcel(String filePath, String sheetName, int column, int row) {
+        String value = "";
+        try {
+            LOGGER.info("Get Any Cell Value based on column and row value");
+
+            FileInputStream fis = new FileInputStream(filePath);
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+
+            value = String.valueOf(sheet.getRow(row - 1).getCell(column - 1));
+
+        } catch (FileNotFoundException e) {
+            LOGGER.error("FileNotFoundException: issue is in getCellValueInExcel" + e);
+            e.printStackTrace();
+        } catch (IOException e) {
+            LOGGER.error("IOException: issue is in getCellValueInExcel" + e);
+            e.printStackTrace();
+        }
+        return value;
+    }
+
+    //This method use for fetch the excel sheet data
+    //filepath -> provide .xlxs file path
+    //sheetName -> provide sheet tab number
+    //return Excel sheet data
+
+    public static String getCellValueInExcelfromHeaderNameRowNumber(String filePath, String sheetName, int columnHeader, int row) {
+        String value = "";
+        int column = 0;
+        try {
+            LOGGER.info("Get  Cell Value based on provided column header value and row number");
+
+            FileInputStream fis = new FileInputStream(filePath);
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+
+            outerloop:
+            for (int i = 0; i < sheet.getLastRowNum(); i++) {
+                for (int j = 0; i < sheet.getRow(i).getLastCellNum(); i++) {
+                    if (String.valueOf(sheet.getRow(i).getCell(j)).equals(columnHeader)) ;
+                    {
+                        column = j;
+                        break outerloop;
+                    }
+                }
+            }
+            value = String.valueOf(sheet.getRow(row - 1).getCell(column));
+            workbook.close();
+            fis.close();
+
+        } catch (FileNotFoundException e) {
+            LOGGER.error("FileNotFoundException: issue is in getCellValueInExcelfromHeaderNameRowNumber" + e);
+            e.printStackTrace();
+        } catch (IOException e) {
+            LOGGER.error("IOException: issue is in getCellValueInExcelfromHeaderNameRowNumber" + e);
+            e.printStackTrace();
+        }
+        return value;
+    }
+
+    //This method use for fetch the excel sheet data
+    //filepath -> provide .xlxs file path
+    //index -> provide index value
+    //return Excel sheet data
+
+    public static void writeToExistingExcel(String filePath, String sheetName, String[] dataToWrite) {
+        try {
+
+            FileInputStream fis = new FileInputStream(filePath);
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+
+            int lastRow = sheet.getLastRowNum();
+            Row newRow = sheet.createRow(lastRow + 1);
+
+            for (int j = 0; j < dataToWrite.length; j++) {
+                Cell cell = newRow.createCell(j);
+                cell.setCellValue(dataToWrite[j]);
+            }
+
+            OutputStream fileOut = new FileOutputStream(filePath);
+            workbook.write(fileOut);
+            fileOut.close();
+            workbook.close();
+            fis.close();
+            LOGGER.info("Successfully Data written in excel file");
+
+        } catch (FileNotFoundException e) {
+            LOGGER.error("Write to Existing file: FileNotFoundException" + e);
+            e.printStackTrace();
+        } catch (IOException e) {
+            LOGGER.error("IOException: Write to Existing file:" + e);
+            e.printStackTrace();
+        }
+
+    }
+
+    //This method use for fetch the excel sheet data
+    //filepath -> provide .xlxs file path
+
+    //return Total number of sheet in excel count
+
+    public static void writeToExistingExcel(String filePath, String sheetName, String[][] dataToWrite) {
+        try {
+
+            FileInputStream fis = new FileInputStream(filePath);
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+
+            int lastRow = sheet.getLastRowNum();
+
+            for (int i = 0; i < dataToWrite.length; i++) {
+                Row newRow = sheet.createRow(lastRow + 1);
+
+                for (int j = 0; j < dataToWrite[i].length; j++) {
+                    Cell cell = newRow.createCell(j);
+                    cell.setCellValue(dataToWrite[i][j]);
+                }
+                lastRow++;
+            }
+            OutputStream fileOut = new FileOutputStream(filePath);
+            workbook.write(fileOut);
+            fileOut.close();
+            workbook.close();
+            fis.close();
+            LOGGER.info("Successfully Data written in excel file");
+
+        } catch (FileNotFoundException e) {
+            LOGGER.error("Write to Existing file: FileNotFoundException" + e);
+            e.printStackTrace();
+        } catch (IOException e) {
+            LOGGER.error("IOException: Write to Existing file:" + e);
+            e.printStackTrace();
+        }
+
+    }
+
+
+    //This method use for fetch column size based on row Namber
+    //filepath -> provide .xlxs file path
+    //sheetName -> ProvideSheetName
+    //rowNumber -> Provide Row Number
+
+
+    //return Total number of sheet in excel count
+
+    public static void writeToNewExcel(String filePath, String sheetName, String[] dataToWrite) {
+        try {
+            File file = new File(filePath);
+            if (file.exists()) {
+                LOGGER.info("File with this Name is already exist");
+                return;
+            }
+            XSSFWorkbook workbook = new XSSFWorkbook();
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+
+            Row newRow = sheet.createRow(0);
+            for (int j = 0; j < dataToWrite.length; j++) {
+                Cell cell = newRow.createCell(j);
+                cell.setCellValue(dataToWrite[j]);
+            }
+            OutputStream fileOut = new FileOutputStream(filePath);
+            workbook.write(fileOut);
+            fileOut.close();
+            workbook.close();
+            LOGGER.info("Successfully Data written in excel file");
+        } catch (FileNotFoundException e) {
+            LOGGER.error("writeToNewExcel: FileNotFoundException" + e);
+            e.printStackTrace();
+        } catch (IOException e) {
+            LOGGER.error("IOException: writeToNewExcel:" + e);
+            e.printStackTrace();
+        }
+    }
+
+    //Get any cell value in string format
+    //cell -> provide cell format data
+    //return -> cell value in String format
+
+    public static void writeToNewExcel(String filePath, String sheetName, String[][] dataToWrite) {
+        try {
+            File file = new File(filePath);
+            if (file.exists()) {
+                LOGGER.info("File with this Name is already exist");
+                return;
+            }
+            XSSFWorkbook workbook = new XSSFWorkbook();
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+            for (int i = 0; i < dataToWrite.length; i++) {
+                Row newRow = sheet.createRow(i);
+                for (int j = 0; j < dataToWrite[i].length; j++) {
+                    Cell cell = newRow.createCell(j);
+                    cell.setCellValue(dataToWrite[i][j]);
+                }
+            }
+            OutputStream fileOut = new FileOutputStream(filePath);
+            workbook.write(fileOut);
+            fileOut.close();
+            workbook.close();
+            LOGGER.info("Successfully Data written in excel file");
+        } catch (FileNotFoundException e) {
+            LOGGER.error("Write to New Excel file: FileNotFoundException" + e);
+            e.printStackTrace();
+        } catch (IOException e) {
+            LOGGER.error("IOException: Write to New Excel file:" + e);
+            e.printStackTrace();
+        }
+    }
+
+    // This Method is use for getting the data from excel file in object multi dimention array
+
+    //filepath -> provide .xlxs file path
+    //sheetName -> Provide SheetName
+
+    // return -> Object of Array
+
+    public static void hightlightCellToRedInExcelSheet(String filePath, String sheetName, int row, int column, String outPutFilePath) {
+        try {
+
+            LOGGER.info("Method to highlight the excel cell to Red color");
+            FileInputStream fis = new FileInputStream(new File(filePath));
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+            CellStyle style = workbook.createCellStyle();
+
+
+            //if input is greater than actual
+
+            if (row > sheet.getLastRowNum() || column > sheet.getRow(row).getPhysicalNumberOfCells()) {
+                LOGGER.info("Input row or column is incorrect");
+                workbook.close();
+                return;
+            }
+
+            Row s = sheet.getRow(row);
+
+
+            Cell sheetCell = s.getCell(column);
+
+            OutputStream fileOut = new FileOutputStream(outPutFilePath);
+
+            //Highlighting cell
+            style.setFillForegroundColor(IndexedColors.RED.getIndex());
+            style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            sheetCell.setCellStyle(style);
+            workbook.write(fileOut);
+            workbook.close();
+            fis.close();
+
+
+        } catch (IOException e) {
+            LOGGER.error("FileNotFoundException occured for hightlightCellToRedInExcelSheet " + e);
+            e.printStackTrace();
+        } catch (Exception e) {
+            LOGGER.error("Exception occured for hightlightCellToRedInExcelSheet " + e);
+            e.printStackTrace();
+        }
+    }
+
+
+    //Get any cell value based on column and Row Value
+
+    //filePath -> Provide .xlsx file path
+    //sheetName -> Provide sheet Name
+    //column -> Provide column Number
+    //row -> Provide row Number
+
+    //return String Cell Value
+
+    public static void hightlightCellToGreenInExcelSheet(String filePath, String sheetName, int row, int column, String outPutFilePath) {
+        try {
+
+            LOGGER.info("Method to highlight the excel cell to Green color");
+            FileInputStream fis = new FileInputStream(new File(filePath));
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+            CellStyle style = workbook.createCellStyle();
+
+
+            //if input is greater than actual
+
+            if (row > sheet.getLastRowNum() || column > sheet.getRow(row).getPhysicalNumberOfCells()) {
+                LOGGER.info("Input row or column is incorrect");
+                workbook.close();
+                return;
+            }
+
+            Row sheetRow = sheet.getRow(row);
+            Cell sheetCell = sheetRow.getCell(column);
+            OutputStream fileOut = new FileOutputStream(outPutFilePath);
+
+            //Highlighting cell
+            style.setFillForegroundColor(IndexedColors.GREEN.getIndex());
+            style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            sheetCell.setCellStyle(style);
+            workbook.write(fileOut);
+            workbook.close();
+            fis.close();
+
+
+        } catch (IOException e) {
+            LOGGER.error("FileNotFoundException occured for hightlightCellToGreenInExcelSheet " + e);
+            e.printStackTrace();
+        } catch (Exception e) {
+            LOGGER.error("Exception occured for hightlightCellToGreenInExcelSheet " + e);
+            e.printStackTrace();
+        }
+    }
+
+    //Get any cell value based on provided column header and row number
+
+    //filePath -> Provide .xlsx file path
+    //sheetName -> Provide sheet Name
+    //column -> Provide column header Number
+    //row -> Provide row Number
+
+    //return String Cell Value
+
+    public static void highlightTextToRedInExcelSheet(String filePath, String sheetName, int row, int column, String outPutFilePath) {
+        try {
+            LOGGER.info("Method to highlight text to red color");
+            FileInputStream fis = new FileInputStream(new File(filePath));
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+            CellStyle style = workbook.createCellStyle();
+
+            //if input is greater than actual
+
+            if (row > sheet.getLastRowNum() || column > sheet.getRow(row).getPhysicalNumberOfCells()) {
+                LOGGER.info("Input row or column is incorrect");
+                workbook.close();
+                return;
+            }
+
+            Row sheetRow = sheet.getRow(row);
+            Cell sheetCell = sheetRow.getCell(column);
+            OutputStream fileOut = new FileOutputStream(outPutFilePath);
+
+            //Highlighting text in cell
+            Font font = workbook.createFont();
+            font.setColor(IndexedColors.RED.getIndex());
+            style.setFont(font);
+
+            sheetCell.setCellStyle(style);
+            workbook.write(fileOut);
+            workbook.close();
+            fis.close();
+        } catch (IOException e) {
+            LOGGER.error("IOException occured for highlightTextToRedInExcelSheet " + e);
+            e.printStackTrace();
+        } catch (Exception e) {
+            LOGGER.error("Exception occured for highlightTextToRedInExcelSheet " + e);
+            e.printStackTrace();
+        }
+    }
+
+
+    //This method use for writing the data in existing excel file
+
+    //input filePath -> Provide .xlsx file path
+    //sheetName -> Provide sheet Name
+    //dataToWrite -> input data
+
+    public static void highlightTextToGreenInExcelSheet(String filePath, String sheetName, int row, int column, String outPutFilePath) {
+        try {
+            LOGGER.info("Method to highlight text to Green color");
+            FileInputStream fis = new FileInputStream(new File(filePath));
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+            CellStyle style = workbook.createCellStyle();
+
+            //if input is greater than actual
+
+            if (row > sheet.getLastRowNum() || column > sheet.getRow(row).getPhysicalNumberOfCells()) {
+                LOGGER.info("Input row or column is incorrect");
+                workbook.close();
+                return;
+            }
+
+            Row sheetRow = sheet.getRow(row);
+            Cell sheetCell = sheetRow.getCell(column);
+            OutputStream fileOut = new FileOutputStream(outPutFilePath);
+
+            //Highlighting text in cell
+            Font font = workbook.createFont();
+            font.setColor(IndexedColors.GREEN.getIndex());
+            style.setFont(font);
+
+            sheetCell.setCellStyle(style);
+            workbook.write(fileOut);
+            workbook.close();
+            fis.close();
+        } catch (IOException e) {
+            LOGGER.error("IOException occured for highlightTextToRedInExcelSheet " + e);
+            e.printStackTrace();
+        } catch (Exception e) {
+            LOGGER.error("Exception occured for highlightTextToRedInExcelSheet " + e);
+            e.printStackTrace();
+        }
+    }
+
+
+    //This method use for writing the data in existing excel file
+
+    //input filePath -> Provide .xlsx file path
+    //sheetName -> Provide sheet Name
+    //dataToWrite -> multi dimensional input data
+
+    public static void highlightTextToBoldInExcelSheet(String filePath, String sheetName, int row, int column, String outPutFilePath) {
+        try {
+            LOGGER.info("Bold the cell in excel sheet");
+            FileInputStream fis = new FileInputStream(new File(filePath));
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            XSSFSheet sheet = workbook.getSheet(sheetName);
+            CellStyle style = workbook.createCellStyle();
+
+            //if input is greater than actual
+
+            if (row > sheet.getLastRowNum() || column > sheet.getRow(row).getPhysicalNumberOfCells()) {
+                LOGGER.info("Input row or column is incorrect");
+                workbook.close();
+                return;
+            }
+
+            Row sheetRow = sheet.getRow(row);
+            Cell sheetCell = sheetRow.getCell(column);
+
+            OutputStream fileOut = new FileOutputStream(outPutFilePath);
+
+            //Highlighting text in cell
+
+            XSSFFont boldfont = workbook.createFont();
+            boldfont.setBold(true);
+            style.setFont(boldfont);
+
+            sheetCell.setCellStyle(style);
+            workbook.write(fileOut);
+            workbook.close();
+            fis.close();
+        } catch (IOException e) {
+            LOGGER.error("IOException occured for highlightTextToBoldInExcelSheet " + e);
+            e.printStackTrace();
+        } catch (Exception e) {
+            LOGGER.error("Exception occured for highlightTextToBoldInExcelSheet " + e);
+            e.printStackTrace();
+        }
+    }
+
+
+    //This method use for writing the data in new excel file
+
+    //input filePath -> Provide .xlsx file path
+    //sheetName -> Provide sheet Name
+    //dataToWrite -> input data
+
+    public static String readWorddocs(String filePath) {
+        String docText = null;
+        try {
+            LOGGER.info("Read the word document");
+            XWPFDocument doc = new XWPFDocument(Files.newInputStream(Paths.get(filePath)));
+            XWPFWordExtractor xwpfWordExtractor = new XWPFWordExtractor(doc);
+            docText = xwpfWordExtractor.getText();
+            LOGGER.info("Document Text::" + docText);
+
+            //Find No of words in the documents
+            long count = Arrays.stream(docText.split("\\s+")).count();
+            LOGGER.info("Total Words:" + count);
+
+        } catch (IOException e) {
+            LOGGER.error("IOException occured for readWorddocs " + e);
+            e.printStackTrace();
+        }
+        return docText;
+    }
+
+
+    //This method use for writing the data in existing excel file
+
+    //input filePath -> Provide .xlsx file path
+    //sheetName -> Provide sheet Name
+    //dataToWrite -> multi dimensional input data
+
+    public static long wordsInDocs(String filePath) {
+        long count = 0;
+        try {
+            LOGGER.info("Read the word document");
+            XWPFDocument doc = new XWPFDocument(Files.newInputStream(Paths.get(filePath)));
+            XWPFWordExtractor xwpfWordExtractor = new XWPFWordExtractor(doc);
+            String docText = xwpfWordExtractor.getText();
+            LOGGER.info("Document Text::" + docText);
+
+            //Find No of words in the documents
+            count = Arrays.stream(docText.split("\\s+")).count();
+            LOGGER.info("Total Words:" + count);
+
+        } catch (IOException e) {
+            LOGGER.error("IOException occured for wordsInDocs " + e);
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    //Method to highlight the Excel cell to Red Color
+    //inputFilePath -> Provide .xlsx file path
+    // sheetName ->
+    //row
+    //column
+    //outputFilePath
+
+    public static String getHeaderValueFromDocsFile(String filePath) {
+        String headerText = null;
+        try {
+            LOGGER.info("Get the header value from word document");
+            FileInputStream fis = new FileInputStream(filePath);
+            XWPFDocument doc = new XWPFDocument(OPCPackage.open(fis));
+            XWPFHeaderFooterPolicy policy = new XWPFHeaderFooterPolicy(doc);
+
+            XWPFHeader header = policy.getDefaultHeader();
+            if (header != null) {
+                headerText = header.getText();
+            }
+
+            XWPFFooter footer = policy.getDefaultFooter();
+            if (footer != null) {
+                LOGGER.info(footer.getText());
+            }
+        } catch (Exception e) {
+            LOGGER.error("IOException occured for getHeaderValueFromDocsFile " + e);
+            e.printStackTrace();
+        }
+        return headerText;
+    }
+
+
+    //Method to highlight the Excel cell to Red Color
+    //inputFilePath -> Provide .xlsx file path
+    // sheetName ->
+    //row
+    //column
+    //outputFilePath
+
+    public static String getFooterValueFromDocsFile(String filePath) {
+        String footerText = null;
+        try {
+            LOGGER.info("Get the header value from word document");
+            FileInputStream fis = new FileInputStream(filePath);
+            XWPFDocument doc = new XWPFDocument(OPCPackage.open(fis));
+            XWPFHeaderFooterPolicy policy = new XWPFHeaderFooterPolicy(doc);
+
+            XWPFFooter footer = policy.getDefaultFooter();
+            if (footer != null) {
+                footerText = footer.getText();
+            }
+        } catch (Exception e) {
+            LOGGER.error("IOException occured for getHeaderValueFromDocsFile " + e);
+            e.printStackTrace();
+        }
+        return footerText;
+    }
+
+
+    //Method to highlight text to Red color in excel sheet
+    //inputFilePath -> Provide .xlsx file path
+    // sheetName ->
+    //row
+    //column
+    //outputFilePath
+
+    public static List<String> readTablesFromDocsFile(String filepath) {
+        List<String> tableTextData = new ArrayList<>();
+        try {
+            LOGGER.info("Get the table values from word documents");
+            XWPFDocument doc = new XWPFDocument(Files.newInputStream(Paths.get(filepath)));
+            Iterator<IBodyElement> docElementInterator = doc.getBodyElementsIterator();
+
+            //Iterator through the list and check for table element type
+
+            while (docElementInterator.hasNext()) {
+                IBodyElement docElement = docElementInterator.next();
+                if ("TABLE".equalsIgnoreCase(docElement.getElementType().name())) {
+                    //Get list of tables and iterate it
+                    List<XWPFTable> xwpfTableList = docElement.getBody().getTables();
+                    for (XWPFTable xwpfTable : xwpfTableList) {
+                        LOGGER.info("Total Rows :" + xwpfTable.getNumberOfRows());
+                        for (int i = 0; i < xwpfTable.getRows().size(); i++) {
+                            for (int j = 0; j < xwpfTable.getRow(i).getTableCells().size(); j++) {
+                                tableTextData.add(xwpfTable.getRow(i).getCell(j).getText());
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            LOGGER.error("IOException:issue in readTablesFromDocsFile" + e);
+            e.printStackTrace();
+        }
+        return tableTextData;
+    }
+
+    //Method to highlight text to Green color in excel sheet
+    //inputFilePath -> Provide .xlsx file path
+    // sheetName ->
+    //row
+    //column
+    //outputFilePath
+
+    public static List<String> readLineTextFile(String filepath) {
+        List<String> readData = new ArrayList<>();
+        File f = new File(filepath);
+
+        try {
+            LOGGER.info("Read the text file line by line and store the data in List<String>");
+
+            BufferedReader br = new BufferedReader(new FileReader(f));
+            String line;
+
+            while ((line = br.readLine()) != null) {
+                readData.add(line);
+
+            }
+            br.close();
+            return readData;
+
+        } catch (IOException e) {
+            LOGGER.error("IOException:issue in readLineTextFile" + e);
+            e.printStackTrace();
+            return null;
+        } catch (Exception e) {
+            LOGGER.error("Exception:issue in readLineTextFile" + e);
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
+    //Method to highlight text to bold color in excel sheet
+    //inputFilePath -> Provide .xlsx file path
+    // sheetName ->
+    //row
+    //column
+    //outputFilePath
+
+    public static String readTextFile(String filepath) {
+        String data = "";
+
+
+        try {
+            LOGGER.info("Read whole text file and store the data in string");
+            data = new String(Files.readAllBytes(Paths.get(filepath)));
+
+
+        } catch (IOException e) {
+            LOGGER.error("IOException:issue in readTextFile" + e);
+            e.printStackTrace();
+
+        } catch (Exception e) {
+            LOGGER.error("Exception:issue in readTextFile" + e);
+            e.printStackTrace();
+
+        }
+        return data;
+
+    }
+
+    //Method to read word document in string format
+
+    //filePath -> Provide .xlsx file path
+
+    public static String readFile(String filepath) {
+        String data = "";
+        File f = new File(filepath);
+
+        try {
+            LOGGER.info("Read the text file line by line and store the data in List<String>");
+            BufferedReader br = new BufferedReader(new FileReader(f));
+            String line;
+            while ((line = br.readLine()) != null) {
+                data += line + "\n";
+
+            }
+            br.close();
+
+        } catch (FileNotFoundException e) {
+            LOGGER.error("IOException:issue in readFile" + e);
+            e.printStackTrace();
+
+        } catch (IOException e) {
+            LOGGER.error("Exception:issue in readLineTextFile" + e);
+            e.printStackTrace();
+
+        } catch (Exception e) {
+            LOGGER.error("Exception:issue in readLineTextFile" + e);
+            e.printStackTrace();
+        }
+
+        return data;
+    }
+
+
+    //Method to read the total word count from document
+
+    //filePath -> Provide .xlsx file path
+
+    public static void writeTextFile(String filepath, String content) {
+
+        File f = new File(filepath);
+        BufferedWriter bw;
+        try {
+            FileWriter writer = new FileWriter(f, true);
+            bw = new BufferedWriter(writer);
+            bw.write(content);
+            writer.write("\r\n");
+            bw.close();
+            writer.close();
+        } catch (IOException e) {
+            LOGGER.error("Exception:issue in writeTextFile" + e);
+            e.printStackTrace();
+
+        } catch (Exception e) {
+            LOGGER.error("Exception:issue in readLineTextFile" + e);
+            e.printStackTrace();
+        }
+
+    }
+
+    //Method to get the header value from documnet
+    //filePath -> Provide .xlsx file path
+
+    public static boolean createTextFile(String filepath) {
+        boolean newFile = false;
+
+        File f = new File(filepath);
+
+        try {
+            LOGGER.info("Create a new text file in provided file path location");
+            newFile = f.createNewFile();
+            LOGGER.info("File Created ::" + newFile);
+
+        } catch (Exception e) {
+            LOGGER.error("Exception:issue in createTextFile" + e);
+            e.printStackTrace();
+        }
+
+        return newFile;
+    }
+//Method to get the footer value from documnet
+    //filePath -> Provide .xlsx file path
+
+    public static void deleteTextFile(String filepath) {
+        boolean deleteFile = false;
+
+        File f = new File(filepath);
+
+        try {
+            if (f.exists()) {
+                LOGGER.info("Got file for deletion");
+                deleteFile = f.delete();
+                LOGGER.info("File deleted ::" + deleteFile);
+            } else {
+                LOGGER.info("File not exist");
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Exception:issue in deleteTextFile" + e);
+            e.printStackTrace();
+        }
+
+    }
+
+    //Method to get the table values from dcument in list
+
+    public static void searchTextInwordDocsFile(String filepath, String searchText) {
+        FileInputStream inputDocument = null;
+
+        try {
+            LOGGER.info("search text in word document file");
+            inputDocument = new FileInputStream(new File(filepath));
+            //Create word Extractor Object
+            XWPFWordExtractor myWord = new XWPFWordExtractor(OPCPackage.open(inputDocument));
+
+            //Create scanner Object
+            Scanner documentScanner = new Scanner(myWord.getText());
+
+            //Define Search Pattern -we find for the word ""Search
+            Pattern words = Pattern.compile(searchText);
+            String key;
+            int count = 0;
+
+            //Scan through evryline
+            while (documentScanner.hasNextLine()) {
+                //Search for pattern in scanned line
+                key = documentScanner.findInLine(words);
+                while (key != null) {
+                    // Find all matches in same line
+                    documentScanner.next();
+                    //Increment counter for the match
+                    count++;
+                    key = documentScanner.findInLine(words);
+                }
+                //scan next line in docuemnt
+                documentScanner.nextLine();
+            }
+            documentScanner.close();
+            //print number of times the search pattern was found
+            LOGGER.info(" Found Input:::" + count + "times");
+        } catch (Exception e) {
+            LOGGER.error("Exception:issue in searchTextInwordDocsFile" + e);
+            e.printStackTrace();
+        }
+
+    }
+    //Method to read the text file line by line and store the data  in list
+
+    public static boolean compareJSONFile(String firstJsonData, String secondJsonData) throws Exception {
+        try {
+
+            LOGGER.info("Compare Two Json file");
+
+            JSONParser parser = new JSONParser();
+
+            //Expected JSON Format
+            JSONObject expectedjsonObject = null;
+
+            expectedjsonObject = (JSONObject) parser.parse(firstJsonData);
+
+            JSONObject actualjsonObject = (JSONObject) parser.parse(secondJsonData);
+            if (!(expectedjsonObject.equals(actualjsonObject))) {
+                Set<String> objSet = expectedjsonObject.entrySet();
+                for (String str : objSet) {
+                    if (!(actualjsonObject.containsKey(str))) {
+                        LOGGER.error("Missing in Actual Json:" + str);
+                        return false;
+                    } else if (!(expectedjsonObject.containsKey(str))) {
+                        LOGGER.error("Extra in Actual Json:" + str);
+                        return false;
+                    } else if (!(expectedjsonObject.get(str).equals(actualjsonObject.get(str)))) {
+                        LOGGER.error("Difference in values of Expected Json and Actual Json\n" + "Expected JsonValue:\n" +
+                                expectedjsonObject.get(str) + "\nActual Json Value::" + actualjsonObject);
+                        return false;
+
+                    } else {
+                        LOGGER.info("JSON Compared Successfully:");
+                        return true;
+                    }
+                }
+
+            }
+        } catch (ParseException e) {
+            LOGGER.error("Exception :issue in compare Json" + e);
+        }
+        return false;
+
+    }
+
+    //Method to read whole text file and store the data in string
+    //filepath -> Input text file
+
+    public static void printJSONArray(JSONArray jsonArray) {
+        try {
+
+            LOGGER.info("ethod of print  JSONARRAY");
+            for (int i = 0; i < jsonArray.size(); i++) {
+                LOGGER.info("Item::::" + jsonArray.get(i).toString());
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Exception handled while printing json" + e.getMessage());
+        }
+
+    }
+
+    //Method to read the text file  by using BufferedReader and store the data  in string
+
+    public static JSONObject parseJsonFromString(String expectedString) {
+        JSONObject jsonObjectFromString = null;
+        try {
+            JSONParser parser = new JSONParser();
+            jsonObjectFromString = (JSONObject) parser.parse(expectedString);
+
+        } catch (ParseException e) {
+            LOGGER.error("Parse Exception: Issue in parseJsonfromString" + e);
+        }
+        return jsonObjectFromString;
+    }
+
+    //Method to write String data into textfile
+    //filepath -> provide input text file
+    //content -> provide content to write in text file
+
+    //Method to parse File to JSON Object
+    // expectedString -> provide data in String format
+    public static JSONObject parseJsonFromFileReader(FileReader jsonFile) {
+        JSONObject jsonObjectFromFile = null;
+        JSONParser parser = new JSONParser();
+        try {
+
+            jsonObjectFromFile = (JSONObject) parser.parse(jsonFile);
+
+        } catch (ParseException e) {
+            LOGGER.error("Parse Exception: Issue in parseJsonfromString" + e);
+
+        } catch (IOException e) {
+            LOGGER.error("IO Exception: Issue in parseJsonfromString" + e);
+        }
+        return jsonObjectFromFile;
+
+    }
+
+    //Method to create a new text file
+    //filepath -> provide input text file path
+    //return -> boolean value based on created file
+
+    //Method to parse File data to JSON Object
+    // expectedString -> provide data in String format
+    public static JSONObject parseJsonFromFile(String jsonFilePath, String jsonFileName) {
+
+        JSONParser parser = new JSONParser();
+
+        //Filepath and FileName can be changed above
+        JSONObject jsonObjectFromFile = null;
+
+        try {
+            LOGGER.info("Parse file data to JSON Object");
+            jsonObjectFromFile = (JSONObject) parser.parse(new FileReader(jsonFilePath + File.separator + jsonFileName));
+
+        } catch (ParseException e) {
+            LOGGER.error("Parse Exception: Issue in parseJsonFromFile" + e);
+
+        } catch (IOException e) {
+            LOGGER.error("IO Exception: Issue in parseJsonFromFile" + e);
+        }
+        return jsonObjectFromFile;
+
+    }
+
+    //Method to delete text file
+    //filepath -> provide input text file path
+    //return -> boolean value based on created file
+
+    public static JSONArray getJSONArray(JSONObject jsonObject, String name) {
+        LOGGER.info("Get JSONARRAY");
+        return (JSONArray) jsonObject.get(name);
+    }
+
+    //Method to search text in word document file file
+    //filepath -> provide doc path with file
+
+    public static JSONObject getJSONObject(JSONObject jsonObject, String name) {
+        LOGGER.info("Get JSONObject");
+        return (JSONObject) jsonObject.get(name);
+    }
+
+    //Metgod to compare JsonFile
+
+    public static String getJSONString(JSONObject jsonObject, String name) {
+        LOGGER.info("Get JSONObject");
+        return (String) jsonObject.get(name);
+    }
+
+    //Method of print  JSONARRAY
+
+    public XSSFSheet getExcelSheetByName(String filepath, String sheetName) {
+        XSSFSheet sheet = null;
+        try {
+            LOGGER.info("Provided filepath:" + filepath);
+            LOGGER.info("Provided Sheet Name:" + sheetName);
+            LOGGER.info("Get the excel sheet data:");
+            FileInputStream fis = new FileInputStream(filepath);
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            sheet = workbook.getSheet(sheetName);
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOGGER.info("IOException::Issue is in getSheetName" + e);
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOGGER.info("Exception:::Issue is in getSheetName" + e);
+
+        }
+        return sheet;
+    }
+    //Method to parse String to JSON Object
+    // expectedString -> provide data in String format
+
+    public XSSFSheet getFirstExcelSheet(String filepath) {
+        XSSFSheet sheet = null;
+        try {
+            LOGGER.info("Provided filepath:" + filepath);
+
+            LOGGER.info("Get the excel sheet data:");
+            FileInputStream fis = new FileInputStream(filepath);
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            sheet = workbook.getSheetAt(0);
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOGGER.info("IOException::Issue is in getFirstExcelSheet" + e);
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOGGER.info("Exception:::Issue is in getFirstExcelSheet" + e);
+
+        }
+        return sheet;
+    }
+
+    public XSSFSheet getExcelSheetByUsingIndex(String filepath, int number) {
+        XSSFSheet sheet = null;
+        try {
+            LOGGER.info("Provided filepath:" + filepath);
+            LOGGER.info("Provided Sheet Number:" + number);
+            LOGGER.info("Get the excel sheet data:");
+            FileInputStream fis = new FileInputStream(filepath);
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            sheet = workbook.getSheetAt(number);
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOGGER.info("IOException::Issue is in getExcelSheetByUsingIndex" + e);
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOGGER.info("Exception:::Issue is in getExcelSheetByUsingIndex" + e);
+
+        }
+        return sheet;
+    }
+
+    public String getExcelSheetNameAtIndexLevel(String filepath, int index) {
+        String sheet = null;
+        try {
+            LOGGER.info("Provided filepath:" + filepath);
+            LOGGER.info("Provided index Number:" + index);
+            LOGGER.info("Get the excel sheet Name at Index Level:");
+            FileInputStream fis = new FileInputStream(filepath);
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            sheet = workbook.getSheetName(index);
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOGGER.info("IOException::Issue is in getExcelSheetNameAtIndexLevel" + e);
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOGGER.info("Exception:::Issue is in getExcelSheetNameAtIndexLevel" + e);
+
+        }
+        return sheet;
+    }
+
+
+    //Method to get JSON ArrayData
+
+    public int getExcelSheetCount(String filepath) {
+        int sheetCount = 0;
+        try {
+            LOGGER.info("Provided filepath:" + filepath);
+
+            LOGGER.info("Get the excel sheet count:");
+            FileInputStream fis = new FileInputStream(filepath);
+            XSSFWorkbook workbook = new XSSFWorkbook(fis);
+            sheetCount = workbook.getNumberOfSheets();
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOGGER.info("IOException::Issue is in getExcelSheetCount" + e);
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOGGER.info("Exception:::Issue is in getExcelSheetCount" + e);
+
+        }
+        return sheetCount;
+    }
+//Method to get JSON Object
+
+    public int totalColumnCountforAnyRow(String filepath, String sheetName, int rowNumber) {
+        int lastColumnNumber = 0;
+        try {
+            LOGGER.info("Provided filepath:" + filepath);
+            LOGGER.info("Provided sheetName:" + sheetName);
+            LOGGER.info("Provided rowNumber:" + rowNumber);
+
+
+            LOGGER.info("Get the excel sheet column count based on row:");
+            XSSFSheet sheet = getExcelSheetByName(filepath, sheetName);
+            Row row = sheet.getRow(rowNumber);
+            lastColumnNumber = row.getLastCellNum();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOGGER.info("Exception:::Issue is in totalColumnCountforAnyRow" + e);
+
+        }
+        return lastColumnNumber;
+    }
+
+    //Method to get JSON Object
+
+    public String getCellValueAsString(Cell cell) {
+        String cellValue = null;
+        if (cell == null) {
+            LOGGER.info("Cell having null value");
+        } else {
+            switch (cell.getCellType()) {
+                case NUMERIC:
+                    cellValue = String.valueOf(cell.getNumericCellValue());
+                    break;
+                case STRING:
+                    cellValue = cell.getStringCellValue();
+                    break;
+                case BOOLEAN:
+                    cellValue = String.valueOf(cell.getBooleanCellValue());
+                    break;
+                case FORMULA:
+                    cellValue = cell.getCellFormula();
+                    break;
+                case BLANK:
+                    cellValue = "";
+                    break;
+                default:
+                    cellValue = "Default";
+                    break;
+            }
+        }
+
+        return cellValue;
+    }
+
+    public List<Map<String, String>> getData(String excelFilePath, String sheetName)
+            throws InvalidFormatException, IOException {
+        Sheet sheet = getSheetByName(excelFilePath, sheetName);
+        return readSheet(sheet);
+    }
+
+    public List<Map<String, String>> getData(String excelFilePath, int sheetNumber)
+            throws InvalidFormatException, IOException {
+        Sheet sheet = getSheetByIndex(excelFilePath, sheetNumber);
+        return readSheet(sheet);
+    }
+
+    private Sheet getSheetByName(String excelFilePath, String sheetName) throws IOException, InvalidFormatException {
+        Sheet sheet = getWorkBook(excelFilePath).getSheet(sheetName);
+        return sheet;
+    }
+
+    private Sheet getSheetByIndex(String excelFilePath, int sheetNumber) throws IOException, InvalidFormatException {
+        Sheet sheet = getWorkBook(excelFilePath).getSheetAt(sheetNumber);
+        return sheet;
+    }
+
+    private Workbook getWorkBook(String excelFilePath) throws IOException, InvalidFormatException {
+        return WorkbookFactory.create(new File(excelFilePath));
+    }
+
+    private List<Map<String, String>> readSheet(Sheet sheet) {
+        Row row;
+        int totalRow = sheet.getPhysicalNumberOfRows();
+        List<Map<String, String>> excelRows = new ArrayList<Map<String, String>>();
+        int headerRowNumber = getHeaderRowNumber(sheet);
+        if (headerRowNumber != -1) {
+            int totalColumn = sheet.getRow(headerRowNumber).getLastCellNum();
+            int setCurrentRow = 1;
+            for (int currentRow = setCurrentRow; currentRow <= totalRow; currentRow++) {
+                row = getRow(sheet, sheet.getFirstRowNum() + currentRow);
+                LinkedHashMap<String, String> columnMapdata = new LinkedHashMap<String, String>();
+                for (int currentColumn = 0; currentColumn < totalColumn; currentColumn++) {
+                    columnMapdata.putAll(getCellValue(sheet, row, currentColumn));
+                }
+                excelRows.add(columnMapdata);
+            }
+        }
+        return excelRows;
+    }
+
+    private int getHeaderRowNumber(Sheet sheet) {
+        Row row;
+        int totalRow = sheet.getLastRowNum();
+        for (int currentRow = 0; currentRow <= totalRow + 1; currentRow++) {
+            row = getRow(sheet, currentRow);
+            if (row != null) {
+                int totalColumn = row.getLastCellNum();
+                for (int currentColumn = 0; currentColumn < totalColumn; currentColumn++) {
+                    Cell cell;
+                    cell = row.getCell(currentColumn, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+                    if (cell.getCellType() == CellType.STRING) {
+                        return row.getRowNum();
+
+                    } else if (cell.getCellType() == CellType.NUMERIC) {
+                        return row.getRowNum();
+
+                    } else if (cell.getCellType() == CellType.BOOLEAN) {
+                        return row.getRowNum();
+                    } else if (cell.getCellType() == CellType.ERROR) {
+                        return row.getRowNum();
+                    }
+                }
+            }
+        }
+        return (-1);
+    }
+
+    private Row getRow(Sheet sheet, int rowNumber) {
+        return sheet.getRow(rowNumber);
+    }
+
+    private LinkedHashMap<String, String> getCellValue(Sheet sheet, Row row, int currentColumn) {
+        LinkedHashMap<String, String> columnMapdata = new LinkedHashMap<String, String>();
+        Cell cell;
+        if (row == null) {
+            if (sheet.getRow(sheet.getFirstRowNum()).getCell(currentColumn, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK)
+                    .getCellType() != CellType.BLANK) {
+                String columnHeaderName = sheet.getRow(sheet.getFirstRowNum()).getCell(currentColumn)
+                        .getStringCellValue();
+                columnMapdata.put(columnHeaderName, "");
+            }
+        } else {
+            cell = row.getCell(currentColumn, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK);
+            if (cell.getCellType() == CellType.STRING) {
+                if (sheet.getRow(sheet.getFirstRowNum())
+                        .getCell(cell.getColumnIndex(), Row.MissingCellPolicy.CREATE_NULL_AS_BLANK)
+                        .getCellType() != CellType.BLANK) {
+                    String columnHeaderName = sheet.getRow(sheet.getFirstRowNum()).getCell(cell.getColumnIndex())
+                            .getStringCellValue();
+                    columnMapdata.put(columnHeaderName, cell.getStringCellValue());
+                }
+            } else if (cell.getCellType() == CellType.NUMERIC) {
+                if (sheet.getRow(sheet.getFirstRowNum())
+                        .getCell(cell.getColumnIndex(), Row.MissingCellPolicy.CREATE_NULL_AS_BLANK)
+                        .getCellType() != CellType.BLANK) {
+                    String columnHeaderName = sheet.getRow(sheet.getFirstRowNum()).getCell(cell.getColumnIndex())
+                            .getStringCellValue();
+                    columnMapdata.put(columnHeaderName, NumberToTextConverter.toText(cell.getNumericCellValue()));
+                }
+            } else if (cell.getCellType() == CellType.BLANK) {
+                if (sheet.getRow(sheet.getFirstRowNum())
+                        .getCell(cell.getColumnIndex(), Row.MissingCellPolicy.CREATE_NULL_AS_BLANK)
+                        .getCellType() != CellType.BLANK) {
+                    String columnHeaderName = sheet.getRow(sheet.getFirstRowNum()).getCell(cell.getColumnIndex())
+                            .getStringCellValue();
+                    columnMapdata.put(columnHeaderName, "");
+                }
+            } else if (cell.getCellType() == CellType.BOOLEAN) {
+                if (sheet.getRow(sheet.getFirstRowNum())
+                        .getCell(cell.getColumnIndex(), Row.MissingCellPolicy.CREATE_NULL_AS_BLANK)
+                        .getCellType() != CellType.BLANK) {
+                    String columnHeaderName = sheet.getRow(sheet.getFirstRowNum()).getCell(cell.getColumnIndex())
+                            .getStringCellValue();
+                    columnMapdata.put(columnHeaderName, Boolean.toString(cell.getBooleanCellValue()));
+                }
+            } else if (cell.getCellType() == CellType.ERROR) {
+                if (sheet.getRow(sheet.getFirstRowNum())
+                        .getCell(cell.getColumnIndex(), Row.MissingCellPolicy.CREATE_NULL_AS_BLANK)
+                        .getCellType() != CellType.BLANK) {
+                    String columnHeaderName = sheet.getRow(sheet.getFirstRowNum()).getCell(cell.getColumnIndex())
+                            .getStringCellValue();
+                    columnMapdata.put(columnHeaderName, Byte.toString(cell.getErrorCellValue()));
+                }
+            }
+        }
+        return columnMapdata;
+    }
+
+
+    //This Method creates for comparing two text file and showing difference of both files generated in HTML File with highlight color
+
+    //firstTextfilePath -> provide first text file path
+    //secondTextfilePath -> provide second text file path
+    //OutputHTMLfilePath -> provide final output diffence showing HTML file path
+
+//    public static void compareTwoTextFileAndShowDifferenceInHTMLFiles(String firstTextfilePath, String secondTextfilePath,String OutputHTMLfilePath)
+//    {
+//        try {
+//            LineIterator file1 = FileUtils.lineIterator(new File(firstTextfilePath),"utf-8");
+//            LineIterator file2 = FileUtils.lineIterator(new File(secondTextfilePath),"utf-8");
+//
+//            //Initialize visitor
+//
+//            FileComparisonUtility fileComparisonUtility = new FileComparisonUtility();
+//
+//            //Read file line by line so that comparison can be done line by line
+//            while (file1.hasNext() || file2.hasNext())
+//            {
+//                // In case both files have different number of lines, fill in with
+//                //empty String. Also append new line character at end so next line comparison moves to
+//                //next line
+//
+//                String left = (file1.hasNext()?file1.nextLine():"")+"\n";
+//                String right = (file1.hasNext()?file1.nextLine():"")+"\n";
+//
+//                //Prepare diff comparator with lines from both files
+//
+//                StringsComparator comparator = new StringsComparator(left,right);
+//
+//                if(comparator.getScript().getLCSLength()>(Integer.max(left.length(),right.length())*0.4))
+//                {
+//                        comparator.getScript().visit((CommandVisitor<Character>)fileComparisonUtility);
+//
+//                }else{
+//                    //if both lines do not have 40% commonlity then compare each with empty line
+//                    //so that they are not aligned to each other in final diff instead they show up on seprtae line
+//
+//                    StringsComparator leftComparator = new StringsComparator(left,"\n");
+//                    leftComparator.getScript().visit(fileComparisonUtility);
+//                    StringsComparator gComparator = new StringsComparator("\n",right);
+//                    leftComparator.getScript().visit(fileComparisonUtility);
+//
+//            }
+//            }
+//        }
+//        catch (IOException e)
+//        {
+//
+//        }
+//    }
+
+
+}
