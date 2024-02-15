@@ -1,0 +1,590 @@
+package common;
+
+import org.apache.poi.hwpf.extractor.WordExtractor;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
+import org.apache.poi.xwpf.usermodel.*;
+import org.junit.Assert;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+
+import org.apache.poi.hwpf.HWPFDocument;
+import org.apache.poi.hwpf.usermodel.CharacterRun;
+import org.apache.poi.hwpf.usermodel.Paragraph;
+import org.apache.poi.hwpf.usermodel.Range;
+public class WordReader {
+    private static final Logger LOGGER = Logger.getLogger(FileUtility.class.getName());
+
+    public static boolean WordBoldReadDoc(String docFilePath, String wordToCheck) {
+        boolean foundBoldText = true;
+        try (FileInputStream fis = new FileInputStream(docFilePath);
+             HWPFDocument document = new HWPFDocument(fis)) {
+
+            Range range = document.getRange();
+            List<String> boldWords = new ArrayList<>();
+
+            for (int i = 0; i < range.numParagraphs(); i++) {
+                Paragraph paragraph = range.getParagraph(i);
+                StringBuilder sentenceBuilder = new StringBuilder();
+
+                for (int j = 0; j < paragraph.numCharacterRuns(); j++) {
+                    CharacterRun run = paragraph.getCharacterRun(j);
+                    if (run.isBold()) {
+                        boldWords.add(run.text());
+
+                        // Append the bold word to the sentence
+                        sentenceBuilder.append(run.text());
+                        sentenceBuilder.append(" "); // Add a space between words
+                    }
+                }
+
+                // Trim trailing space and print the sentence for each paragraph
+                if (sentenceBuilder.length() > 0) {
+                    sentenceBuilder.setLength(sentenceBuilder.length() - 1); // Remove the last space
+                    String sentence = sentenceBuilder.toString();
+                    System.out.println("Sentence: " + sentence);
+                    if (sentence.contains(wordToCheck)) {
+                        LOGGER.info("'" + wordToCheck + "' is found");
+                        foundBoldText = true;
+                        break;
+                    }else {
+                        foundBoldText = false;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            Assert.fail("Reading Bold text in document has an Error!!!");
+        }
+        return foundBoldText;
+    }
+
+    public static void WordItalicReadDoc(String docFilePath, String wordToCheck) {
+        boolean foundItalicText = false;
+        try (FileInputStream fis = new FileInputStream(docFilePath);
+             HWPFDocument document = new HWPFDocument(fis)) {
+
+            Range range = document.getRange();
+            List<String> boldWords = new ArrayList<>();
+
+            for (int i = 0; i < range.numParagraphs(); i++) {
+                Paragraph paragraph = range.getParagraph(i);
+                StringBuilder sentenceBuilder = new StringBuilder();
+
+                for (int j = 0; j < paragraph.numCharacterRuns(); j++) {
+                    CharacterRun run = paragraph.getCharacterRun(j);
+                    if (run.isItalic()) {
+                        boldWords.add(run.text());
+
+                        // Append the bold word to the sentence
+                        sentenceBuilder.append(run.text());
+                        sentenceBuilder.append(" "); // Add a space between words
+                    }
+                }
+
+                // Trim trailing space and print the sentence for each paragraph
+                if (sentenceBuilder.length() > 0) {
+                    sentenceBuilder.setLength(sentenceBuilder.length() - 1); // Remove the last space
+                    String sentence = sentenceBuilder.toString();
+                    System.out.println("Sentence: " + sentence);
+                    if (sentence.contains(wordToCheck)) {
+                        LOGGER.info("'" + wordToCheck + "' is found");
+                        foundItalicText = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!foundItalicText) {
+                Assert.fail("'" + wordToCheck + "' is not Italic.Please check doc file");
+            }
+
+        } catch (IOException e) {
+            Assert.fail("Reading Italic text in document has an Error!!!");
+        }
+    }
+
+    public static void PositionOfWordsInDoc(String filePath, String firstWord, String secondWord, String thirdWord) throws IOException {
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            HWPFDocument doc = new HWPFDocument(fis);
+            WordExtractor extractor = new WordExtractor(doc);
+            String text = extractor.getText();
+            System.out.println(text);
+            int firstWordIndex = text.indexOf(firstWord);
+            System.out.println(firstWordIndex);
+            int secondWordIndex = text.indexOf(secondWord);
+            System.out.println(secondWordIndex);
+            int thirdWordIndex = text.indexOf(thirdWord);
+            System.out.println(thirdWordIndex);
+            if ((firstWordIndex < secondWordIndex) && (firstWordIndex < thirdWordIndex) && (secondWordIndex < thirdWordIndex)) {
+                LOGGER.info("'" + secondWord + "' comes in between " + "'" + firstWord + "' and '" + thirdWord + "'");
+            } else {
+                Assert.fail("'" + secondWord + "' is not in between " + "'" + firstWord + "' and '" + thirdWord + "'" + ".Please check again");
+            }
+        } catch (IOException e) {
+            Assert.fail("Reading Full document has an Error!!!");
+        }
+    }
+
+    public static boolean ReadFullDoc(String filePath, String wordCheck) throws IOException {
+        boolean flag=true;
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            HWPFDocument doc = new HWPFDocument(fis);
+            WordExtractor extractor = new WordExtractor(doc);
+            String text = extractor.getText();
+            System.out.println(text);
+            if (text.contains(wordCheck)) {
+                LOGGER.info("'" + wordCheck + "' is present in the Doc file");
+                flag=true;
+            } else {
+                LOGGER.info("'" + wordCheck + "' is not present in the Doc file.Please check the Doc file.");
+                flag=false;
+            }
+        } catch (IOException e) {
+            Assert.fail("Reading Full document has an Error!!!");
+        }
+        return flag;
+    }
+
+    public static void ReadFullDocForNotAvailableText(String filePath, String wordCheck) throws IOException {
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            HWPFDocument doc = new HWPFDocument(fis);
+            WordExtractor extractor = new WordExtractor(doc);
+            String text = extractor.getText();
+            System.out.println(text);
+            if (text.contains(wordCheck)) {
+                Assert.fail("'" + wordCheck + "' is present in the Doc file");
+            } else {
+                LOGGER.info("'" + wordCheck + "' is not present in the Doc file.Please check the Doc file.");
+            }
+        } catch (IOException e) {
+            Assert.fail("Reading Full document has an Error!!!");
+        }
+    }
+
+
+    public static boolean WordBoldReadDocx(String docFilePath, String searchString) {
+        boolean flag=true;
+        try (FileInputStream fis = new FileInputStream(docFilePath)) {
+            XWPFDocument docx = new XWPFDocument(fis);
+            List<String> boldTextList = new ArrayList<>();
+            boolean isStringBold = checkAndCollectBoldText(docx.getBodyElements(), searchString, boldTextList);
+
+            if (isStringBold) {
+                LOGGER.info("'" + searchString + "' is bold in the DOCX document.");
+            } else {
+                Assert.fail("'" + searchString + "' is not bold in the DOCX document.Please check...!!");
+            }
+
+            if (!boldTextList.isEmpty()) {
+//                System.out.println("Bold text in the document:");
+                for (String boldText : boldTextList) {
+                    LOGGER.info(boldText);
+                    flag=true;
+                }
+            } else {
+                LOGGER.info("No bold text found in the document.");
+                flag=false;
+            }
+
+        } catch (IOException e) {
+            Assert.fail("Reading bold text in document has an Error!!!");
+        }
+        return flag;
+    }
+
+    private static boolean checkAndCollectBoldText(List<IBodyElement> elements, String searchString, List<String> boldTextList) {
+        boolean isStringBoldFound = false;
+        for (IBodyElement element : elements) {
+            if (element instanceof XWPFParagraph) {
+                XWPFParagraph paragraph = (XWPFParagraph) element;
+                if (isStringBoldInParagraph(paragraph, searchString)) {
+                    isStringBoldFound = true;
+                }
+                collectBoldText(paragraph, boldTextList);
+            } else if (element instanceof XWPFTable) {
+                XWPFTable table = (XWPFTable) element;
+                for (XWPFTableRow row : table.getRows()) {
+                    for (XWPFTableCell cell : row.getTableCells()) {
+                        if (checkAndCollectBoldText(cell.getBodyElements(), searchString, boldTextList)) {
+                            isStringBoldFound = true;
+                        }
+                    }
+                }
+            }
+            // Add handling for other body element types if needed (e.g., XWPFSDT)
+        }
+        return isStringBoldFound;
+    }
+
+    private static boolean isStringBoldInParagraph(XWPFParagraph paragraph, String searchString) {
+        for (XWPFRun run : paragraph.getRuns()) {
+            String text = run.getText(0);
+            if (text != null && text.contains(searchString)) {
+                return run.isBold();
+            }
+        }
+        return false;
+    }
+
+    private static void collectBoldText(XWPFParagraph paragraph, List<String> boldTextList) {
+        for (XWPFRun run : paragraph.getRuns()) {
+            String text = run.getText(0);
+            if (text != null && !text.trim().isEmpty() && run.isBold()) {
+                boldTextList.add(text);
+            }
+        }
+    }
+
+
+    public static void WordItalicReadDocx(String docFilePath, String wordToCheck) {
+        try (FileInputStream fis = new FileInputStream(docFilePath)) {
+            XWPFDocument docx = new XWPFDocument(fis);
+            List<String> italicTextList = new ArrayList<>();
+            boolean isStringItalic = checkAndCollectItalicText(docx.getBodyElements(), wordToCheck, italicTextList);
+
+            if (isStringItalic) {
+                LOGGER.info("'" + wordToCheck + "' is Italic in the DOCX document.");
+            } else {
+                Assert.fail("'" + wordToCheck + "' is not Italic in the DOCX document.Please check...!!");
+            }
+
+            if (!italicTextList.isEmpty()) {
+                System.out.println("Italic text in the document:");
+                for (String italicText : italicTextList) {
+                    System.out.println(italicText);
+                }
+            } else {
+                System.out.println("No italic text found in the document.");
+            }
+
+        } catch (IOException e) {
+            Assert.fail("Reading Italic text in document has an Error!!!");
+        }
+    }
+
+    private static boolean checkAndCollectItalicText(List<IBodyElement> elements, String searchString, List<String> italicTextList) {
+        boolean isStringItalicFound = false;
+        for (IBodyElement element : elements) {
+            if (element instanceof XWPFParagraph) {
+                XWPFParagraph paragraph = (XWPFParagraph) element;
+                if (isStringItalicInParagraph(paragraph, searchString)) {
+                    isStringItalicFound = true;
+                }
+                collectItalicText(paragraph, italicTextList);
+            } else if (element instanceof XWPFTable) {
+                XWPFTable table = (XWPFTable) element;
+                for (XWPFTableRow row : table.getRows()) {
+                    for (XWPFTableCell cell : row.getTableCells()) {
+                        if (checkAndCollectItalicText(cell.getBodyElements(), searchString, italicTextList)) {
+                            isStringItalicFound = true;
+                        }
+                    }
+                }
+            }
+            // Add handling for other body element types if needed (e.g., XWPFSDT)
+        }
+        return isStringItalicFound;
+    }
+
+    private static boolean isStringItalicInParagraph(XWPFParagraph paragraph, String searchString) {
+        for (XWPFRun run : paragraph.getRuns()) {
+            String text = run.getText(0);
+            if (text != null && text.contains(searchString)) {
+                return run.isItalic();
+            }
+        }
+        return false;
+    }
+
+    private static void collectItalicText(XWPFParagraph paragraph, List<String> italicTextList) {
+        for (XWPFRun run : paragraph.getRuns()) {
+            String text = run.getText(0);
+            if (text != null && !text.trim().isEmpty() && run.isItalic()) {
+                italicTextList.add(text);
+            }
+        }
+    }
+
+
+    public static void PositionOfWordsInDocx(String filePath, String firstWord, String secondWord, String thirdWord) throws IOException {
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            XWPFDocument docx = new XWPFDocument(fis);
+            XWPFWordExtractor extractor = new XWPFWordExtractor(docx);
+            String text = extractor.getText();
+            System.out.println(text);
+            int firstWordIndex = text.indexOf(firstWord);
+            int secondWordIndex = text.indexOf(secondWord);
+            int thirdWordIndex = text.indexOf(thirdWord);
+            if ((firstWordIndex < secondWordIndex) && (firstWordIndex < thirdWordIndex) && (secondWordIndex < thirdWordIndex)) {
+                LOGGER.info("'" + secondWord + "' comes in between " + "'" + firstWord + "' and '" + thirdWord + "'");
+            } else {
+                Assert.fail("'" + secondWord + "' is not in between " + "'" + firstWord + "' and '" + thirdWord + "'" + ".Please check again");
+            }
+        } catch (IOException e) {
+            Assert.fail("Reading Full document has an Error!!!");
+        }
+    }
+
+    public static boolean ReadFullDocx(String filePath, String wordCheck) throws IOException {
+        boolean flag=true;
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            XWPFDocument docx = new XWPFDocument(fis);
+            XWPFWordExtractor extractor = new XWPFWordExtractor(docx);
+            String text = extractor.getText();
+            System.out.println(text);
+            if (text.contains(wordCheck)) {
+                LOGGER.info("'" + wordCheck + "' is present in the Doc file");
+                flag=true;
+            } else {
+                LOGGER.info("'" + wordCheck + "' is not present in the Doc file.Please check the Doc file.");
+                flag=false;
+            }
+        } catch (IOException e) {
+            Assert.fail("Reading Full document has an Error!!!");
+        }
+        return flag;
+    }
+
+    public static void ReadFullDocxNotAvailable(String filePath, String wordCheck) throws IOException {
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            XWPFDocument docx = new XWPFDocument(fis);
+            XWPFWordExtractor extractor = new XWPFWordExtractor(docx);
+            String text = extractor.getText();
+            System.out.println(text);
+            if (text.contains(wordCheck)) {
+                Assert.fail("'" + wordCheck + "' is present in the Doc file");
+            } else {
+                LOGGER.info("'" + wordCheck + "' is not present in the Doc file.Please check the Doc file.");
+            }
+        } catch (IOException e) {
+            Assert.fail("Reading Full document has an Error!!!");
+        }
+    }
+
+    public static void ReadTextFromParticularPageDoc(String filePath, String wordCheck) throws IOException {
+        int targetPage = 6; // Change this to the desired page number
+        int paragraphsPerPage = 35; // Change this to the estimated paragraphs per page
+
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            POIFSFileSystem fs = new POIFSFileSystem(fis);
+            HWPFDocument document = new HWPFDocument(fs);
+
+            StringBuilder textFromPage = new StringBuilder();
+            int currentPage = 1;
+            int paragraphCount = 0;
+
+            for (int i = 0; i < document.getRange().numParagraphs(); i++) {
+                Paragraph paragraph = document.getRange().getParagraph(i);
+                // Increment the paragraph count
+                paragraphCount++;
+
+                if (paragraphCount > paragraphsPerPage) {
+                    // Move to the next page if we have exceeded the estimated paragraphs per page
+                    currentPage++;
+                    paragraphCount = 1;
+                }
+
+                if (currentPage == targetPage) {
+                    textFromPage.append(paragraph.text());
+                    textFromPage.append(System.lineSeparator());
+                }
+            }
+
+            System.out.println("Text from Page " + targetPage + ":");
+            System.out.println(textFromPage.toString());
+            if (textFromPage.toString().contains(wordCheck)) {
+                Assert.fail("'" + wordCheck + "' is present in the word file!!");
+            } else {
+                LOGGER.info("'" + wordCheck + "' is not present in the word file!!.Hence its correct");
+            }
+
+        } catch (IOException e) {
+            Assert.fail("Reading a paragraph in full document doc has an Error!!!");
+        }
+    }
+
+    public static void ReadTextFromParticularPageDocx(String filePath, String wordCheck) throws IOException {
+        int targetPage = 6; // Change this to the desired page number
+        int paragraphsPerPage = 35; // Change this to the estimated paragraphs per page
+
+        try (FileInputStream fis = new FileInputStream(filePath)) {
+            XWPFDocument document = new XWPFDocument(fis);
+
+            StringBuilder textFromPage = new StringBuilder();
+            int currentPage = 1;
+            int paragraphCount = 0;
+
+            List<IBodyElement> bodyElements = document.getBodyElements();
+            for (IBodyElement bodyElement : bodyElements) {
+                if (bodyElement instanceof XWPFParagraph) {
+                    XWPFParagraph paragraph = (XWPFParagraph) bodyElement;
+                    // Increment the paragraph count
+                    paragraphCount++;
+
+                    if (paragraphCount > paragraphsPerPage) {
+                        // Move to the next page if we have exceeded the estimated paragraphs per page
+                        currentPage++;
+                        paragraphCount = 1;
+                    }
+
+                    if (currentPage == targetPage) {
+                        textFromPage.append(paragraph.getText());
+                        textFromPage.append(System.lineSeparator());
+                    }
+
+                    if (currentPage > targetPage) {
+                        // Break the loop if we have passed the target page
+                        break;
+                    }
+                }
+            }
+
+            System.out.println("Text from Page " + targetPage + ":");
+            System.out.println(textFromPage.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public static int ReadWordOccurencesDoc(String filePath, String targetWord) throws IOException {
+        int wordCount = 0;
+        try {
+
+            // Load the DOC document
+            FileInputStream fis = new FileInputStream(filePath);
+            HWPFDocument document = new HWPFDocument(fis);
+
+            // Extract text from the DOC
+            WordExtractor extractor = new WordExtractor(document);
+            String docText = extractor.getText();
+            System.out.println(docText);
+            // Count occurrences
+            wordCount = countWordOccurrences(docText, targetWord);
+
+            System.out.println("The word '" + targetWord + "' occurs " + wordCount + " times in the DOC.");
+
+            // Close the document stream
+            fis.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return wordCount;
+    }
+
+    public static int ReadWordOccurencesDocHeader(String filePath, String targetWord) throws IOException {
+        int wordCount = 0;
+        try {
+
+            // Load the DOC document
+            FileInputStream fis = new FileInputStream(filePath);
+            HWPFDocument document = new HWPFDocument(fis);
+
+            // Extract text from the DOC
+//            WordExtractor extractor = new WordExtractor(document);
+//            String docText = extractor.getText();
+//            System.out.println(docText);
+//            Range range = document.getRange();
+            Range range= document.getHeaderStoryRange();
+            String docContent = range.text();
+            // Count occurrences
+            wordCount = countWordOccurrences(docContent, targetWord);
+
+            System.out.println("The word '" + targetWord + "' occurs " + wordCount + " times in the DOC.");
+
+            // Close the document stream
+            fis.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return wordCount;
+    }
+
+    public static int ReadWordOccurencesDocx(String filePath, String targetWord) throws IOException {
+        int count = 0;
+
+        try (FileInputStream fis = new FileInputStream(filePath);
+             XWPFDocument document = new XWPFDocument(fis);
+             XWPFWordExtractor extractor = new XWPFWordExtractor(document)) {
+            String docText = extractor.getText();
+            // Count occurrences
+            count = countWordOccurrences(docText, targetWord);
+
+            System.out.println("The word '" + targetWord + "' occurs " + count + " times in the DOC.");
+
+
+            System.out.println("Number of occurrences of '" + targetWord + "': " + count);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return count;
+    }
+
+    // Count occurrences of a word in a string
+    private static int countWordOccurrences(String text, String targetWord) {
+        int count = 0;
+        int lastIndex = 0;
+
+        while (lastIndex != -1) {
+            lastIndex = text.indexOf(targetWord, lastIndex);
+            if (lastIndex != -1) {
+                count++;
+                lastIndex += targetWord.length();
+            }
+        }
+
+        return count;
+    }
+
+    public static int countWordInHeader(String filePath, String targetWord) {
+        int totalWordCount=0;
+        try {
+            InputStream inputStream = new FileInputStream(filePath);
+            XWPFDocument document = new XWPFDocument(inputStream);
+            List<XWPFHeader> headers = document.getHeaderList();
+            for (int headerIndex = 0; headerIndex < headers.size(); headerIndex++) {
+                XWPFHeader header = headers.get(headerIndex);
+                int wordCount = countWordOccurrencesInParagraphs(header.getParagraphs(), targetWord);
+                System.out.println("Header " + (headerIndex + 1) + " word count for '" + targetWord + "': " + wordCount);
+                totalWordCount += wordCount;
+            }
+
+            System.out.println("Total word count for '" + targetWord + "' in all headers: " + totalWordCount);
+
+            inputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return totalWordCount;
+    }
+
+    public static int countWordOccurrencesInParagraphs(List<XWPFParagraph> paragraphs, String targetWord) {
+        int totalWordCount = 0;
+        for (XWPFParagraph paragraph : paragraphs) {
+            String paragraphText = paragraph.getText();
+            int wordCount = countOccurrences(paragraphText, targetWord);
+            totalWordCount += wordCount;
+        }
+        return totalWordCount;
+    }
+
+    public static int countOccurrences(String text, String targetWord) {
+        int occurrences = 0;
+        int index = text.indexOf(targetWord);
+        while (index != -1) {
+            occurrences++;
+            index = text.indexOf(targetWord, index + targetWord.length());
+        }
+        return occurrences;
+    }
+
+
+
+
+}
