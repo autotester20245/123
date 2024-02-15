@@ -1,0 +1,89 @@
+package common;
+
+//import API.APICommonUtility;
+
+import org.apache.log4j.Logger;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Properties;
+
+
+public class DataReaderUtillity {
+    //private static final Logger LOGGER = Logger.getLogger(DataReaderUtillity.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(DataReaderUtillity.class.getName());
+    private static Properties prop;
+
+    //Getter Method of properties file object
+    public static Properties getProp() {
+        return prop;
+    }
+
+    //Getter Method of properties file object
+    public static void setProp(Properties prop) {
+        DataReaderUtillity.prop = prop;
+    }
+
+    public static final void loadProp() {
+        prop = new Properties();
+        try {
+            String fileName = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main"
+                    + File.separator + "resources" + File.separator + "properties" + File.separator + "config.properties";
+
+            prop.load(new FileInputStream(new File(fileName)));
+            setProp(prop);
+            LOGGER.info("Successful loaded properties file from" + fileName);
+
+            // set cookie value
+            LOGGER.info("Set Cookie value");
+//            APICommonUtility.setCookieVal(prop.getProperty("cookieValue"));
+//            LOGGER.info("Cookie Value:::"+prop.getProperty("cookieValue"));
+
+
+            if (prop.getProperty("isLocal").equalsIgnoreCase("true")) {
+//                APICommonUtility.setCookieVal(prop.getProperty("cookieValue"));
+                LOGGER.info("Cookie value set for local");
+            } else {
+//                APICommonUtility.setCookieVal(System.getenv("cookieValue"));
+                LOGGER.info("Cookie value set for Remote");
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+
+
+    }
+
+    // Method to laod any proeerty file
+
+    public static final void loadProp(String propFileName) {
+        prop = new Properties();
+        try {
+            LOGGER.info("Successful loaded properties file from" + propFileName);
+            String fileName = System.getProperty("user.dir") + File.separator + "src" + File.separator + "main"
+                    + File.separator + "resources" + File.separator + "properties" + File.separator + propFileName;
+
+            prop.load(new FileInputStream(new File(fileName)));
+            setProp(prop);
+            LOGGER.info("Successful loaded properties file from" + fileName);
+
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+    }
+
+
+}
