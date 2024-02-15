@@ -1,0 +1,21 @@
+package common;
+
+public class FWKConstants {
+
+    public static final String ENV = "local";
+    public static final int IMPLICITWAIT = 40;
+
+    public static final int PAGELOADWAIT = 60;
+    public static final int ELEMENT_WAIT_TIME = 60;
+    private static boolean isLocal;
+
+    public static boolean getIsLocal() {
+        return isLocal;
+    }
+
+    public static void setIsLocal(boolean isLocal) {
+        FWKConstants.isLocal = isLocal;
+    }
+
+
+}
