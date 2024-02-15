@@ -1,0 +1,68 @@
+package common;
+
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.service.ExtentService;
+
+import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.Date;
+
+public class ReportingUtility {
+    private static DataReaderUtillity dataReaderUtility = new DataReaderUtillity();
+
+    public static String reportingFolderStructure() {
+        String path = new String();
+        Calendar cal = Calendar.getInstance();
+        int year = cal.get(Calendar.YEAR);
+        String month = new SimpleDateFormat("MMMMMMMMM").format(cal.getTime());
+        DateFormat dateFormat = new SimpleDateFormat("dd");
+        Date dt = new Date();
+        String date = dateFormat.format(dt);
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("HH_mm_ss");
+        LocalDateTime now = LocalDateTime.now();
+        String timestamp = dtf.format(now);
+
+        String folderpath = System.getProperty("user.dir") + "\\target\\test-output\\SparkReport\\Spark.html";
+        path = folderpath + File.separator + year + File.separator + month + File.separator + date + File.separator + timestamp;
+
+
+//        File file = new java.io.File(path);
+////file.mkdirs(); // wrong!
+//        file.getParentFile().mkdirs(); // correct!
+//        if (!file.exists()) {
+//            file.createNewFile();
+//        }
+
+
+        File file = new File(path);
+        if (!file.exists()) {
+
+            //new File(path).getParentFile().mkdirs();
+            new File(path).mkdirs();
+            return path;
+        } else {
+            return path;
+        }
+    }
+
+    public static void setSystemInfo() {
+        dataReaderUtility.loadProp();
+        String browser = dataReaderUtility.getProp().getProperty("browser");
+        String browserVersion = dataReaderUtility.getProp().getProperty("browser_version");
+        String os = dataReaderUtility.getProp().getProperty("os");
+        String osVersion = dataReaderUtility.getProp().getProperty("os_version");
+        ExtentReports extentReports = ExtentService.getInstance();
+        extentReports.setSystemInfo("Project Name", "WriteProjectName");
+        extentReports.setSystemInfo("User Name", System.getProperty("user.name"));
+        extentReports.setSystemInfo("OS", os);
+        extentReports.setSystemInfo("OS Version", osVersion);
+        extentReports.setSystemInfo("Browser", browser);
+        extentReports.setSystemInfo("Browser Version", browserVersion);
+    }
+
+
+}
