@@ -1,0 +1,232 @@
+package common;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.pdfbox.text.TextPosition;
+import org.junit.Assert;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+
+public class PDFReader {
+    private static final Logger LOGGER = Logger.getLogger(FileUtility.class.getName());
+public static boolean PDFBoldRead(String pdfFilePath,String wordToCheck)
+{
+    boolean flag=true;
+    StringBuilder sentenceBuilder = new StringBuilder();
+    List<String> boldSentences = new ArrayList<>();
+    try (PDDocument document = PDDocument.load(new File(pdfFilePath))) {
+        PDFTextStripper textStripper = new PDFTextStripper() {
+            @Override
+            protected void processTextPosition(TextPosition text) {
+                if (text.getFont().getFontDescriptor().isForceBold()) {
+                    sentenceBuilder.append(text.getUnicode());
+                    boldSentences.add(sentenceBuilder.toString());
+                    sentenceBuilder.setLength(0);
+                }
+            }
+            };
+
+        textStripper.setSortByPosition(true);
+
+        for (int i = 0; i < document.getNumberOfPages(); i++) {
+            textStripper.setStartPage(i + 1);
+            textStripper.setEndPage(i + 1);
+            textStripper.getText(document);
+        }
+        String finalSentence=boldSentences.toString().replaceAll(", ","");
+        if(finalSentence.contains(wordToCheck))
+        {
+            LOGGER.info("'"+wordToCheck+"' is in Bold");
+            flag=true;
+        }else {
+            LOGGER.info("'"+wordToCheck+"' is not in Bold.Please check it.");
+            flag=false;
+        }
+
+    } catch (IOException e) {
+        Assert.fail("Reading bold in PDF has an Error!!!");
+    }
+    return flag;
+}
+
+    public static void PDFItalicRead(String pdfFilePath,String wordToCheck)
+    {
+        StringBuilder sentenceBuilder = new StringBuilder();
+        List<String> boldSentences = new ArrayList<>();
+        try (PDDocument document = PDDocument.load(new File(pdfFilePath))) {
+            PDFTextStripper textStripper = new PDFTextStripper() {
+                @Override
+                protected void processTextPosition(TextPosition text) {
+                    if (text.getFont().getFontDescriptor().isItalic()) {
+                        sentenceBuilder.append(text.getUnicode());
+                        boldSentences.add(sentenceBuilder.toString());
+                        sentenceBuilder.setLength(0);
+                    }
+                }
+            };
+
+            textStripper.setSortByPosition(true);
+
+            for (int i = 0; i < document.getNumberOfPages(); i++) {
+                textStripper.setStartPage(i + 1);
+                textStripper.setEndPage(i + 1);
+                textStripper.getText(document);
+            }
+            String finalSentence=boldSentences.toString().replaceAll(", ","");
+            System.out.println("Italic sentence: "+finalSentence);
+            if(finalSentence.contains(wordToCheck))
+            {
+                LOGGER.info("'"+wordToCheck+"' is in Italic");
+            }else {
+                Assert.fail("'"+wordToCheck+"' is not in Italic.Please check it.");
+            }
+
+        } catch (IOException e) {
+            Assert.fail("Reading italic in PDF has an Error!!!");
+        }
+    }
+
+    public static void PositionOfWordsInPDF(String filePath, String firstWord, String  secondWord, String thirdWord) throws IOException {
+    try {
+        PDDocument doc = PDDocument.load(new File(filePath));
+        int pageCount = doc.getNumberOfPages();
+        System.out.println("PDF Pages: " + pageCount);
+//        Assert.assertEquals(pageCount,6);
+        System.out.println("================PDF Content==================");
+        PDFTextStripper pdfTextStripper = new PDFTextStripper();
+//        pdfTextStripper.setStartPage(4);
+//        pdfTextStripper.setEndPage(4);
+        String pdfText = pdfTextStripper.getText(doc);
+        System.out.println(pdfText);
+        int firstWordIndex = pdfText.indexOf(firstWord);
+        System.out.println(firstWordIndex);
+        int secondWordIndex = pdfText.indexOf(secondWord);
+        System.out.println(secondWordIndex);
+        int thirdWordIndex = pdfText.indexOf(thirdWord);
+        System.out.println(thirdWordIndex);
+        if ((firstWordIndex < secondWordIndex) && (firstWordIndex < thirdWordIndex) && (secondWordIndex < thirdWordIndex)) {
+            LOGGER.info("'" + secondWord + "' comes in between " + "'" + firstWord + "' and '" + thirdWord + "'");
+        } else {
+            Assert.fail("'" + secondWord + "' is not in between " + "'" + firstWord + "' and '" + thirdWord + "'" + ".Please check again");
+        }
+        doc.close();
+    }catch(Exception e)
+    {
+        Assert.fail("Reading full PDF has an Error!!!");
+    }
+    }
+
+    public static void ReadFullPDF(String filePath,String wordCheck,int pageNumber) throws IOException {
+        try {
+            PDDocument doc = PDDocument.load(new File(filePath));
+            int pageCount = doc.getNumberOfPages();
+            System.out.println("================PDF Content==================");
+            PDFTextStripper pdfTextStripper = new PDFTextStripper();
+            pdfTextStripper.setStartPage(pageNumber);
+            pdfTextStripper.setEndPage(pageNumber);
+            String pdfText = pdfTextStripper.getText(doc);
+            System.out.println(pdfText);
+            if (pdfText.contains(wordCheck)) {
+                LOGGER.info("'" + wordCheck + "' is present in the PDF");
+            } else {
+                Assert.fail("'" + wordCheck + "' is not present in the PDF.Please check the PDF.");
+            }
+            doc.close();
+        }catch(Exception e)
+        {
+            Assert.fail("Reading full PDF has an Error!!!");
+        }
+
+    }
+
+    public static void ReadFullPDFForNotAvailableText(String filePath,String wordCheck,int pageNumber) throws IOException {
+        try {
+            PDDocument doc = PDDocument.load(new File(filePath));
+            int pageCount = doc.getNumberOfPages();
+            System.out.println("================PDF Content==================");
+            PDFTextStripper pdfTextStripper = new PDFTextStripper();
+            pdfTextStripper.setStartPage(pageNumber);
+            pdfTextStripper.setEndPage(pageNumber);
+            String pdfText = pdfTextStripper.getText(doc);
+            System.out.println(pdfText);
+            if (pdfText.contains(wordCheck)) {
+                Assert.fail("'" + wordCheck + "' is present in the PDF");
+            } else {
+                LOGGER.info("'" + wordCheck + "' is not present in the PDF.Hence validated!!");
+            }
+            doc.close();
+        }catch(Exception e)
+        {
+            Assert.fail("Reading full PDF has an Error!!!");
+        }
+
+    }
+
+    public static void ReadFullPDFForAvailableText(String filePath,String wordCheck,int pageNumber) throws IOException {
+        try {
+            PDDocument doc = PDDocument.load(new File(filePath));
+            int pageCount = doc.getNumberOfPages();
+            System.out.println("================PDF Content==================");
+            PDFTextStripper pdfTextStripper = new PDFTextStripper();
+            pdfTextStripper.setStartPage(pageNumber);
+//            pdfTextStripper.setEndPage(pageNumber);
+            String pdfText = pdfTextStripper.getText(doc);
+            System.out.println(pdfText);
+            if (pdfText.contains(wordCheck)) {
+                LOGGER.info("'" + wordCheck + "' is present in the PDF");
+            } else {
+               Assert.fail("'" + wordCheck + "' is not present in the PDF.Hence validated!!");
+            }
+            doc.close();
+        }catch(Exception e)
+        {
+            Assert.fail("Reading full PDF has an Error!!!");
+        }
+
+    }
+
+
+
+    public static int WordsRepeatInPDF(String filePath,String targetWord)
+    {
+        int wordCount=0;
+        try {
+            PDDocument doc = PDDocument.load(new File(filePath));
+            int pageCount = doc.getNumberOfPages();
+            System.out.println("================PDF Content==================");
+            // Extract text from the PDF
+            PDFTextStripper textStripper = new PDFTextStripper();
+            String pdfText = textStripper.getText(doc);
+            System.out.print(pdfText);
+            wordCount = countOccurrences(pdfText, targetWord);
+
+            doc.close();
+
+        }catch(Exception e)
+        {
+            Assert.fail("Reading full PDF has an Error!!!");
+        }
+        return wordCount;
+    }
+
+    // Count occurrences of a word in a string
+    private static int countOccurrences(String text, String targetWord) {
+        int count = 0;
+        int lastIndex = 0;
+
+        while (lastIndex != -1) {
+            lastIndex = text.indexOf(targetWord, lastIndex);
+            if (lastIndex != -1) {
+                count++;
+                lastIndex += targetWord.length();
+            }
+        }
+
+        return count;
+    }
+}
