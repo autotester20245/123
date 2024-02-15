@@ -1,0 +1,121 @@
+package stepdefs;
+
+import com.aventstack.extentreports.MediaEntityBuilder;
+import common.DataReaderUtillity;
+import common.DriverManager;
+import common.UICommonUtility;
+import helper.ConfigureProductHelper;
+import helper.LoginPageHelper;
+import io.cucumber.java.After;
+import io.cucumber.java.AfterStep;
+import io.cucumber.java.Before;
+import io.cucumber.java.Scenario;
+import io.cucumber.java.en.And;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
+import org.testng.Assert;
+import org.testng.asserts.SoftAssert;
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.Status;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+
+import java.io.File;
+import java.sql.Driver;
+
+
+public class LoginStepDef extends DriverManager {
+
+	private static final Logger LOGGER = Logger.getLogger(LoginStepDef.class);
+	DriverManager driverManager = new DriverManager();
+	private static String title;
+	SoftAssert softAssert = new SoftAssert();
+
+	DataReaderUtillity dataReaderUtility = new DataReaderUtillity();
+	UICommonUtility uiCommonUtility = new UICommonUtility();
+	LoginPageHelper loginPageHelper = new LoginPageHelper();
+	ConfigureProductHelper ConfigureProductHelper = new ConfigureProductHelper();
+
+
+	@Before
+	public void init(Scenario scenario) {
+		try {
+			LOGGER.info("Load config properties");
+			dataReaderUtility.loadProp();
+			String isLocalValue = DataReaderUtillity.getProp().getProperty("isLocal");
+			if (isLocalValue.equalsIgnoreCase("false")) {
+				LOGGER.info("scenario.getName" + scenario.getName());
+				String testCaseName = scenario.getName();
+				driverManager.browserStackTestName(testCaseName);
+			}
+		} catch (Exception e) {
+			LOGGER.info("Failed to Initialize UI Environment" + e);
+		}
+	}
+
+	@After
+	public void close(Scenario scenario) {
+		try {
+			String isLocalValue = DataReaderUtillity.getProp().getProperty("isLocal");
+			if (isLocalValue.equalsIgnoreCase("false")) {
+				boolean value = false;
+				LOGGER.info("scenario.getStatus " + scenario.getStatus());
+				LOGGER.info("scenario.isFailed" + scenario.isFailed());
+				scenario.getSourceTagNames();
+				if (scenario.getStatus().toString().equals("PASSED")) {
+					value = true;
+				} else {
+					value = false;
+					UICommonUtility.getScreenShot("Screen", "Image");
+				}
+				driverManager.browserStackTestStatus(value);
+			} else {
+				if (isLocalValue.equalsIgnoreCase("true")) {
+					boolean value = false;
+					LOGGER.info("scenario.getStatus " + scenario.getStatus());
+					LOGGER.info("scenario.isFailed" + scenario.isFailed());
+					scenario.getSourceTagNames();
+					if (scenario.getStatus().toString().equals("PASSED")) {
+						value = true;
+					} else {
+						value = false;
+						UICommonUtility.getScreenShot("Screen", "Image");
+					}
+				}
+
+			}
+//			if (driverManager.getBrowserSet()) {
+//				driverManager.tearDown();
+//			}
+			driverManager.tearDown();
+		} catch (Exception e) {
+			Assert.assertFalse(true, "Failed to teardown" + e);
+		}
+	}
+
+	@AfterStep
+	public void screenshot(Scenario scenario) {
+		if (scenario.isFailed()) {
+			UICommonUtility.getScreenShot("Login to the application", "Login");
+		}
+	}
+
+	@Given("initialize browser instant")
+	public void initializeBrowserInstant() {
+		try {
+			driverManager.initilizeUI();
+			UICommonUtility.setDriverinstant();
+
+		} catch (Exception e) {
+			Assert.assertFalse(true, "Failed to initialize browser instant" + e);
+		}
+	}
+
+
+}
