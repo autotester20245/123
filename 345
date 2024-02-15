@@ -1,0 +1,1379 @@
+package common;
+
+//import org.apache.log4j.Logger;
+import org.apache.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.edge.EdgeOptions;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.ie.InternetExplorerDriver;
+import org.openqa.selenium.safari.SafariDriver;
+import org.testng.Assert;
+import org.testng.TestRunner;
+import org.sikuli.script.Pattern;
+import org.sikuli.script.Screen;
+import io.cucumber.java.Scenario;
+
+import org.openqa.selenium.remote.CapabilityType;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import java.io.File;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+
+import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.safari.SafariDriver;
+//import java.util.logging.Logger;
+
+//import static org.slf4j.LoggerFactory.getLogger;
+
+public class DriverManager {
+	private static final Logger LOGGER = Logger.getLogger(DriverManager.class.getName());
+	private static WebDriver driver;
+	private static String remoteDriver;
+
+	private static String configPath;
+	private static String downloadpath = null;
+
+	private static boolean browserSet = false;
+	public static String getConfigPath() {
+		return configPath;
+	}
+
+	public static void setConfigPath(String configPath) {
+		DriverManager.configPath = configPath;
+	}
+
+	public static boolean getBrowserSet() {
+		return browserSet;
+	}
+
+	public static void setBrowserSet(boolean browserSet) {
+		DriverManager.browserSet = browserSet;
+	}
+
+	public static WebDriver setBrowserConfig(String browser, Properties prop) {
+//        if (browser.equals("chrome")) {
+//            WebDriverManager.chromedriver().setup();
+//            tlDriver.set(new ChromeDriver());
+
+		if (browser.equals("Firefox")) {
+			WebDriverManager.firefoxdriver().avoidBrowserDetection().setup();
+//            System.setProperty("webdriver.gecko.driver", System.getProperty("localfirefoxpath"));
+			driver = new FirefoxDriver();
+		} else if (browser.equals("Safari")) {
+
+//            System.setProperty("webdriver.gecko.driver", System.getProperty("localfirefoxpath"));
+
+//WebDriverManager.().setup();
+			driver = new SafariDriver();
+		} else if (browser.equals("EDGE")) {
+			WebDriverManager.edgedriver().setup();
+//            System.setProperty("webdriver.edge.driver", System.getProperty("localEdgepath"));
+			driver = new EdgeDriver();
+		} else if (browser.equals("Chrome")) {
+//            System.setProperty("webdriver.chrome.driver", System.getProperty("localchromepath"));
+//            driver = new ChromeDriver();
+			WebDriverManager.chromedriver().setup();
+			driver = new ChromeDriver();
+//            driver.set(new ChromeDriver());
+
+		}
+
+//                } else if(browser.equals("HeadlessChrome"))
+//                {
+//                    HTMLUnitDriver headless = new HTMLUnitDriver(BrowserVersion.CHROME)
+//                    driver = headless;
+//                }
+//                else if(browser.equals("HeadlessFirefox"))
+//                {
+//                    HTMLUnitDriver headless = new HTMLUnitDriver(BrowserVersion.Firefox_2)
+//                    driver = headless;
+//                }else if(browser.equals("HeadlessIE"))
+//                {
+//                    HTMLUnitDriver headless = new HTMLUnitDriver(BrowserVersion.IE)
+//                    driver = headless;
+//                }
+//            }else if(browser.equals("HeadlessEdje"))
+//                {
+//                    HTMLUnitDriver headless = new HTMLUnitDriver(BrowserVersion.EDGE)
+//                    driver = headless;
+		else {
+			driver = null;
+		}
+		driver.manage().window().maximize();
+		driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+		return driver;
+	}
+
+	public static void resizeBrowserHightAndWidgth(int width, int height) {
+		try {
+
+			LOGGER.info(
+					"Resize the current window to the given dimension width:" + width + "and height:" + height + "");
+			Dimension d = new Dimension(width, height);
+			driver.manage().window().setSize(d);
+
+		} catch (Exception e) {
+			LOGGER.error("Exception handled for - resizeBrowserWidthAndHight" + e);
+			e.printStackTrace();
+		}
+
+	}
+
+	public static Dimension getBrowserDimensionSize() {
+		Dimension size = null;
+		try {
+			size = driver.manage().window().getSize();
+			int height = size.getHeight();
+			int width = size.getWidth();
+			LOGGER.info("Current Browser Dimension Width:" + width + "Height:" + height);
+		} catch (Exception e) {
+			LOGGER.error("Exception handled for getBrowserDimensionSize -> " + e);
+			e.printStackTrace();
+		}
+		return size;
+	}
+
+	public static void navigateTo(String urlPath) {
+		try {
+			LOGGER.info("Navigate to URL:" + urlPath);
+			driver.navigate().to(urlPath);
+
+		} catch (Exception e) {
+			LOGGER.error("Exception handled for - navigate to" + e);
+		}
+	}
+	// Set Browser config to instantiate any browser instant - support multiple
+	// browser
+
+	public static void forward(String urlPath) {
+		try {
+			LOGGER.info("Takes you forward by one page on the browser's history");
+			driver.navigate().forward();
+
+		} catch (Exception e) {
+			LOGGER.error("Exception handled for - forward" + e);
+		}
+	}
+
+//            Resizing Browser dimension Based on based on provided width and height value
+
+	public static void refresh() {
+		try {
+			LOGGER.info("Refresh the current browser's page");
+			driver.navigate().refresh();
+
+		} catch (Exception e) {
+			LOGGER.error("Exception handled for - refresh" + e);
+		}
+	}
+
+	// This method will return current browser dimension
+
+	public static void addCookie(String key, String value) {
+		try {
+			LOGGER.info("add the cookie into current browser context");
+			driver.manage().addCookie(new Cookie(key, value));
+
+		} catch (Exception e) {
+			LOGGER.error("Exception handled for - addCookie" + e);
+		}
+	}
+
+	// This Method loads a new webpage in the current browser window
+
+	public static String getCookieVal(String key) {
+		Cookie cookie = null;
+		try {
+			LOGGER.info("Get the cookie value");
+			cookie = driver.manage().getCookieNamed(key);
+
+		} catch (Exception e) {
+			LOGGER.error("Exception handled for - getCookieVal" + e);
+		}
+		return cookie.getValue();
+	}
+
+	// THis method does the same operation as clicking on forward button of any
+	// browser. It neither accept nor return anything
+
+	public static Cookie getCookieDetails(String CookieName) {
+		Cookie cookie = null;
+
+		try {
+			LOGGER.info("Get the details cookie");
+			cookie = driver.manage().getCookieNamed(CookieName);
+
+		} catch (Exception e) {
+			LOGGER.error("Exception handled for +getCookieDetails" + e);
+		}
+
+		return cookie;
+	}
+
+	// THis method refresh the current page. It neither accept nor return anything
+
+	public static Set<Cookie> getAllCookies() {
+		Set<Cookie> cookies = null;
+		try {
+			LOGGER.info("Get all available cookies");
+			cookies = driver.manage().getCookies();
+
+		} catch (Exception e) {
+			LOGGER.error("Exception handled for - getCookieDetails ->" + e);
+		}
+		return cookies;
+	}
+
+	// THis method use to add the cookie into current browser context
+
+//    key : provide cookie Name
+//    value : provide the cookie value
+
+	public static void deleteAllCookies() {
+		try {
+			LOGGER.info("Delete All Cookies");
+			driver.manage().deleteAllCookies();
+		} catch (Exception e) {
+			LOGGER.error("Exception handled for - deleteAllCookies" + e);
+		}
+	}
+
+	// THis method return the cookie value by providing the cookiename
+
+//    key : provide cookie Name
+
+	// downloadpath -> path where you want to download your file , this is basically
+	// used in manageDriver method when we use remote driver
+	public static void setDownloadPath(String downloadpath) {
+		DriverManager.downloadpath = downloadpath;
+		LOGGER.info("Download path set to" + downloadpath);
+	}
+
+	// This method return the cookie details by providing cookie name
+
+	// Get a specific directory path for downloaded files
+	public static String getDownLoadFilePathLocation() {
+		if (FWKConstants.getIsLocal()) {
+			downloadpath = System.getProperty("user.home");
+			downloadpath = downloadpath + File.separator + "Downloads";
+
+			return downloadpath;
+		}
+		return downloadpath;
+	}
+
+	// this method use for get all available cookies from page
+
+	// Navigate to URL
+	public static final void navigateURL() {
+		LOGGER.info("Navigate to the URL::::" + DataReaderUtillity.getProp().getProperty("urlName"));
+		driver.navigate().to(DataReaderUtillity.getProp().getProperty("urlName"));
+	}
+
+	// This method use for delete all cookies
+
+	public static final void navigateURL(String url) {
+		LOGGER.info("Navigate to the URL::::" + url);
+		driver.navigate().to(url);
+	}
+
+	// set Download file path
+
+	// Create a instance of Driver Object
+	public final void manageDriver(Properties prop) {
+//        String browser = prop.getProperty("browser");
+
+//        String browser = null;
+//        try {
+////            LOGGER.info("Initializing Crome Driver..");
+//            HashMap<String, Object> chromePrefs = new HashMap<>();
+//            chromePrefs.put("profile.default_content_settings.popups", 0);
+//            chromePrefs.put("profile.default_content_settings_values.automatic_downloads", 1);
+//            chromePrefs.put("download.prompt_for_download", false);
+//
+//            if (!FWKConstants.getIsLocal()) {
+//                String downloadFilepath = System.getProperty("user.dir") + File.separator + "src" + File.separator
+//                        + "main" + File.separator + "resources" + File.separator + "data" + File.separator + "downloads";
+//                chromePrefs.put("download.default_directory", downloadFilepath);
+//                setDownloadPath(downloadFilepath);
+//            }
+//
+//
+//            ChromeOptions options = new ChromeOptions();
+//            options.setExperimentalOption("pref", chromePrefs);
+//            options.setExperimentalOption("useAutomationExtention", false);
+//
+//            options.addArguments(new String[]{"Start-maximized"});
+////            options.addArguments("--test type--");
+//            options.addArguments(new String[]{"--test-type"});
+////            options.addArguments("--ignore certification error");
+//            options.addArguments(new String[]{"--ignore-certification-error"});
+////            options.addArguments("--headless");
+//
+//            LOGGER.info("Check is Local:" + prop.getProperty("isLocal"));
+//            if (prop.getProperty("isLocal").equalsIgnoreCase("true")) {
+////                LOGGER.info("Inside the local chrome driver code");
+////                System.setProperty("webdriver.chrome.driver",prop.getProperty("localChromePath"));
+////                driver = new ChromeDriver(options);
+//
+//                browser = prop.getProperty("browser");
+//
+////
+////                WebDriverManager.firefoxdriver().avoidBrowserDetection().setup();
+//////            System.setProperty("webdriver.gecko.driver", System.getProperty("localfirefoxpath"));
+////                driver = new FirefoxDriver();
+////            } else if (browser.equals("Safari")) {
+////                WebDriverManager.operadriver().setup();
+////                driver = new SafariDriver();
+////            } else if (browser.equals("EDGE")) {
+////                WebDriverManager.edgedriver().setup();
+//////            System.setProperty("webdriver.edge.driver", System.getProperty("localEdgepath"));
+////                driver = new EdgeDriver();
+////            } else if (browser.equals("Chrome")) {
+//////            System.setProperty("webdriver.chrome.driver", System.getProperty("localchromepath"));
+//////            driver = new ChromeDriver();
+////                WebDriverManager.chromedriver().setup();
+////                driver = new ChromeDriver();
+//////            driver.set(new ChromeDriver());
+//
+//
+//
+//
+//
+//
+//
+//
+//                if (browser.equals("Firefox")) {
+//                    LOGGER.info("Inside the Firefox Driver Code");
+//                    WebDriverManager.firefoxdriver().avoidBrowserDetection().setup();
+////                    System.setProperty("webdriver.gecko.driver", prop.getProperty("localFirefoxPath"));
+//                    driver = new FirefoxDriver();
+//                } else if (browser.equals("IE")) {
+//                    LOGGER.info("Inside the IE Driver Code");
+////                    System.setProperty("webdriver.ie.driver", prop.getProperty("localIEpath"));
+//                    driver = new InternetExplorerDriver();
+//                } else if (browser.equals("EDGE")) {
+//                    LOGGER.info("Inside the  EDGE Driver Code");
+////                    System.setProperty("webdriver.edge.driver", prop.getProperty("localEdgePath"));
+//                    WebDriverManager.edgedriver().setup();
+//                    driver = new EdgeDriver();
+//                } else if (browser.equals("Chrome")) {
+//                    LOGGER.info("Inside the  Chrome Driver Code");
+//                    WebDriverManager.chromedriver().setup();
+////                    System.setProperty("webdriver.chrome.driver", prop.getProperty("localChromePath"));
+//                    driver = new ChromeDriver();
+//
+//                }
+//                LOGGER.info("Browser screen dimention" + driver.manage().window().getSize());
+//                LOGGER.info("Before setDriver");
+//                setDriver(driver);
+//                LOGGER.info("After setDriver");
+//
+//            } else {
+//                LOGGER.info("Inside the Remote Chrome Driver Code");
+//                options.addArguments("window-size=1920,1080");
+//                DesiredCapabilities capabilities = new DesiredCapabilities(options);
+//                capabilities.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
+//
+//                capabilities.setPlatform(Platform.ANY);
+//                capabilities.setCapability("max-duration", FWKConstants.PAGELOADWAIT);
+//                capabilities.setCapability("command timeout", FWKConstants.PAGELOADWAIT);
+//                capabilities.setCapability("idle timeout", FWKConstants.PAGELOADWAIT);
+//                capabilities.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
+
+//                LOGGER.info("To initialize the remote driver");
+//                if (System.getenv("remoteDriver") == null || System.getenv("remoteDriver").isEmpty()) {
+//                    remoteDriver = prop.getProperty("remoteDriver");
+//                    LOGGER.info("Remote Driver is used from Properties file" + remoteDriver);
+//                } else {
+//                    remoteDriver = System.getenv("remoteDriver").toLowerCase().trim();
+//                    LOGGER.info("Remote Driver is used from Environment Variable" + remoteDriver);
+//                }
+//
+//                driver = new RemoteWebDriver(new URL(remoteDriver), capabilities);
+//
+//
+//            }
+//
+//            LOGGER.info("Browser screen dimention" + driver.manage().window().getSize());
+//            LOGGER.info("Before setDriver");
+//            setDriver(driver);
+//            LOGGER.info("After setDriver");
+//        } catch (Exception e) {
+//            LOGGER.error("Cannot initialiaze " + browser + " Driver" + e);
+//        }
+
+		String URL = "https://" + prop.getProperty("browserStackUserID") + ":" + prop.getProperty("browserStackPwd")
+				+ "@hub-cloud.browserstack.com/wd/hub";
+		String browser = null;
+		try {
+			System.setProperty("webdriver.chrome.driver", System.getProperty("user.dir") + File.separator + "src" + File.separator + "test"
+					+ File.separator + "resources" + File.separator + "drivers" + File.separator + "chromedriver_108.exe");
+			HashMap<String, Object> chromePrefs = new HashMap<>();
+			chromePrefs.put("profile.default_content_settings.popups", 0);
+			chromePrefs.put("profile.default_content_settings_values.automatic_downloads", 1);
+			chromePrefs.put("download.prompt_for_download", false);
+
+			/*
+			 * if (!FWKConstants.getIsLocal()) { String downloadFilepath =
+			 * System.getProperty("user.dir") + File.separator + "src" + File.separator +
+			 * "main" + File.separator + "resources" + File.separator + "data" +
+			 * File.separator + "downloads"; chromePrefs.put("download.default_directory",
+			 * downloadFilepath); setDownloadPath(downloadFilepath); }
+			 */
+
+			ChromeOptions options = new ChromeOptions();
+//			options.setExperimentalOption("pref", chromePrefs);
+//			options.setExperimentalOption("useAutomationExtention", false);
+//			options.addArguments("--no-sandbox");
+//			options.addArguments("--disable-dev-shm-usage");
+//			options.addArguments(new String[] { "Start-maximized" });
+//			options.addArguments(new String[] { "--test-type" });
+//			options.addArguments(new String[] { "--ignore-certification-error" });
+			options.addArguments("start-maximized"); // open Browser in maximized mode
+			options.addArguments("disable-infobars"); // disabling infobars
+			options.addArguments("--disable-extensions"); // disabling extensions
+			options.addArguments("--disable-gpu"); // applicable to windows os only
+			options.addArguments("--disable-dev-shm-usage"); // overcome limited resource problems
+			options.addArguments("--no-sandbox"); // Bypass OS security model
+			options.addArguments("user-data-dir=C:\\Users\\archana.db\\AppData\\Local\\Microsoft\\Edge\\User Data");
+
+			browser = prop.getProperty("browser");
+
+			EdgeOptions edgeoptions = new EdgeOptions();
+			edgeoptions.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
+			List<String> args = Arrays.asList("user-data-dir=C:\\Users\\archana.db\\AppData\\Local\\Microsoft\\Edge\\User Data1","--no-sandbox","--disable-dev-shm-usage");
+			Map<String, Object> map = new HashMap<>();
+			map.put("args", args);
+			edgeoptions.setCapability("ms:edgeOptions", map);
+
+			LOGGER.info("Check is Local:" + prop.getProperty("isLocal"));
+			if (prop.getProperty("isLocal").equalsIgnoreCase("true")) {
+				if (browser.equalsIgnoreCase("Firefox")) {
+					LOGGER.info("Inside the Firefox Driver Code");
+					WebDriverManager.firefoxdriver().avoidBrowserDetection().setup();
+					driver = new FirefoxDriver();
+				} else if (browser.equalsIgnoreCase("IE")) {
+					LOGGER.info("Inside the IE Driver Code");
+					driver = new InternetExplorerDriver();
+				} else if (browser.equalsIgnoreCase("EDGE")) {
+					LOGGER.info("Inside the  EDGE Driver Code");
+//					System.setProperty("webdriver.edge.driver","C:\\Users\\archana.db\\Project\\src\\test\\resources\\data\\msedgedriver_111_1.exe");
+					WebDriverManager.edgedriver().setup();
+					driver = new EdgeDriver();
+				} else if (browser.equalsIgnoreCase("Chrome")) {
+					LOGGER.info("Inside the  Chrome Driver Code");
+//					WebDriverManager.chromedriver().setup();
+					driver = new ChromeDriver(options);
+
+				}
+				LOGGER.info("Browser screen dimention" + driver.manage().window().getSize());
+				LOGGER.info("Before setDriver");
+				setDriver(driver);
+				LOGGER.info("After setDriver");
+
+			} else {
+				LOGGER.info("Inside the Remote Driver Code");
+				DesiredCapabilities capabilities = new DesiredCapabilities();
+
+				StringBuilder stringB = new StringBuilder();
+//				stringB.append("Build 2" + CalendarUtility.getCurrentDateWithoutHrs());
+				stringB.append("Build_" + CalendarUtility.getCurrentDateWithoutHrs());
+
+				capabilities.setCapability("build", stringB);
+
+				HashMap<String, Boolean> networkLogsOptions = new HashMap<>();
+				networkLogsOptions.put("captureContent", true);
+				capabilities.setCapability("browserstack.networkLogs", true);
+				capabilities.setCapability("browserstack.networkLogsOptions", networkLogsOptions);
+
+				capabilities.setCapability("projectName", "project.automation.test.bdd");
+				
+				capabilities.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
+				capabilities.setCapability("max-duration", FWKConstants.PAGELOADWAIT);
+				capabilities.setCapability("command timeout", FWKConstants.PAGELOADWAIT);
+				// capabilities.setCapability("idle timeout", FWKConstants.PAGELOADWAIT);
+				capabilities.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
+				capabilities.setPlatform(Platform.ANY);
+				HashMap<String, Object> browserstackOptions = new HashMap<String, Object>();
+				if (prop.getProperty("os").equalsIgnoreCase("OS X")) {
+					if (browser.equalsIgnoreCase("Firefox")) {
+						LOGGER.info("Inside the Firefox Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					} else if (browser.equalsIgnoreCase("Edge")) {
+						LOGGER.info("Inside the Edge Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					} else if (browser.equalsIgnoreCase("Safari")) {
+						LOGGER.info("Inside the  Safari Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					} else if (browser.equalsIgnoreCase("Chrome")) {
+						LOGGER.info("Inside the  Chrome Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					}
+
+				} else {
+					if (browser.equalsIgnoreCase("Firefox")) {
+						LOGGER.info("Inside the Firefox Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					} else if (browser.equalsIgnoreCase("Edge")) {
+						LOGGER.info("Inside the Edge Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					} else if (browser.equalsIgnoreCase("Chrome")) {
+						LOGGER.info("Inside the  Chrome Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					}
+				}
+				browserstackOptions.put("sessionName", scenarioName);
+				browserstackOptions.put("os", prop.getProperty("os"));
+				browserstackOptions.put("osVersion", prop.getProperty("os_version"));
+				capabilities.setCapability("bstack:options", browserstackOptions);
+				// capabilities.setCapability("browserstack.idleTimeout", "5");
+				capabilities.setCapability("browserstack.console", "info");
+				capabilities.setCapability("browserstack.debug", "true");
+				capabilities.setCapability("consoleLogs", "errors");
+				driver = new RemoteWebDriver(new URL(URL), capabilities);
+
+				driver.manage().window().maximize();
+			}
+			LOGGER.info("Browser screen dimension" + driver.manage().window().getSize());
+			LOGGER.info("Before setDriver");
+			setDriver(driver);
+			LOGGER.info("After setDriver");
+		} catch (Exception e) {
+			LOGGER.error("Cannot initialize " + browser + " Driver" + e);
+		}
+
+//
+
+	}
+
+	public final void manageDriverCRM(Properties prop) {
+//        String browser = prop.getProperty("browser");
+
+//        String browser = null;
+//        try {
+////            LOGGER.info("Initializing Crome Driver..");
+//            HashMap<String, Object> chromePrefs = new HashMap<>();
+//            chromePrefs.put("profile.default_content_settings.popups", 0);
+//            chromePrefs.put("profile.default_content_settings_values.automatic_downloads", 1);
+//            chromePrefs.put("download.prompt_for_download", false);
+//
+//            if (!FWKConstants.getIsLocal()) {
+//                String downloadFilepath = System.getProperty("user.dir") + File.separator + "src" + File.separator
+//                        + "main" + File.separator + "resources" + File.separator + "data" + File.separator + "downloads";
+//                chromePrefs.put("download.default_directory", downloadFilepath);
+//                setDownloadPath(downloadFilepath);
+//            }
+//
+//
+//            ChromeOptions options = new ChromeOptions();
+//            options.setExperimentalOption("pref", chromePrefs);
+//            options.setExperimentalOption("useAutomationExtention", false);
+//
+//            options.addArguments(new String[]{"Start-maximized"});
+////            options.addArguments("--test type--");
+//            options.addArguments(new String[]{"--test-type"});
+////            options.addArguments("--ignore certification error");
+//            options.addArguments(new String[]{"--ignore-certification-error"});
+////            options.addArguments("--headless");
+//
+//            LOGGER.info("Check is Local:" + prop.getProperty("isLocal"));
+//            if (prop.getProperty("isLocal").equalsIgnoreCase("true")) {
+////                LOGGER.info("Inside the local chrome driver code");
+////                System.setProperty("webdriver.chrome.driver",prop.getProperty("localChromePath"));
+////                driver = new ChromeDriver(options);
+//
+//                browser = prop.getProperty("browser");
+//
+////
+////                WebDriverManager.firefoxdriver().avoidBrowserDetection().setup();
+//////            System.setProperty("webdriver.gecko.driver", System.getProperty("localfirefoxpath"));
+////                driver = new FirefoxDriver();
+////            } else if (browser.equals("Safari")) {
+////                WebDriverManager.operadriver().setup();
+////                driver = new SafariDriver();
+////            } else if (browser.equals("EDGE")) {
+////                WebDriverManager.edgedriver().setup();
+//////            System.setProperty("webdriver.edge.driver", System.getProperty("localEdgepath"));
+////                driver = new EdgeDriver();
+////            } else if (browser.equals("Chrome")) {
+//////            System.setProperty("webdriver.chrome.driver", System.getProperty("localchromepath"));
+//////            driver = new ChromeDriver();
+////                WebDriverManager.chromedriver().setup();
+////                driver = new ChromeDriver();
+//////            driver.set(new ChromeDriver());
+//
+//
+//
+//
+//
+//
+//
+//
+//                if (browser.equals("Firefox")) {
+//                    LOGGER.info("Inside the Firefox Driver Code");
+//                    WebDriverManager.firefoxdriver().avoidBrowserDetection().setup();
+////                    System.setProperty("webdriver.gecko.driver", prop.getProperty("localFirefoxPath"));
+//                    driver = new FirefoxDriver();
+//                } else if (browser.equals("IE")) {
+//                    LOGGER.info("Inside the IE Driver Code");
+////                    System.setProperty("webdriver.ie.driver", prop.getProperty("localIEpath"));
+//                    driver = new InternetExplorerDriver();
+//                } else if (browser.equals("EDGE")) {
+//                    LOGGER.info("Inside the  EDGE Driver Code");
+////                    System.setProperty("webdriver.edge.driver", prop.getProperty("localEdgePath"));
+//                    WebDriverManager.edgedriver().setup();
+//                    driver = new EdgeDriver();
+//                } else if (browser.equals("Chrome")) {
+//                    LOGGER.info("Inside the  Chrome Driver Code");
+//                    WebDriverManager.chromedriver().setup();
+////                    System.setProperty("webdriver.chrome.driver", prop.getProperty("localChromePath"));
+//                    driver = new ChromeDriver();
+//
+//                }
+//                LOGGER.info("Browser screen dimention" + driver.manage().window().getSize());
+//                LOGGER.info("Before setDriver");
+//                setDriver(driver);
+//                LOGGER.info("After setDriver");
+//
+//            } else {
+//                LOGGER.info("Inside the Remote Chrome Driver Code");
+//                options.addArguments("window-size=1920,1080");
+//                DesiredCapabilities capabilities = new DesiredCapabilities(options);
+//                capabilities.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
+//
+//                capabilities.setPlatform(Platform.ANY);
+//                capabilities.setCapability("max-duration", FWKConstants.PAGELOADWAIT);
+//                capabilities.setCapability("command timeout", FWKConstants.PAGELOADWAIT);
+//                capabilities.setCapability("idle timeout", FWKConstants.PAGELOADWAIT);
+//                capabilities.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
+
+//                LOGGER.info("To initialize the remote driver");
+//                if (System.getenv("remoteDriver") == null || System.getenv("remoteDriver").isEmpty()) {
+//                    remoteDriver = prop.getProperty("remoteDriver");
+//                    LOGGER.info("Remote Driver is used from Properties file" + remoteDriver);
+//                } else {
+//                    remoteDriver = System.getenv("remoteDriver").toLowerCase().trim();
+//                    LOGGER.info("Remote Driver is used from Environment Variable" + remoteDriver);
+//                }
+//
+//                driver = new RemoteWebDriver(new URL(remoteDriver), capabilities);
+//
+//
+//            }
+//
+//            LOGGER.info("Browser screen dimention" + driver.manage().window().getSize());
+//            LOGGER.info("Before setDriver");
+//            setDriver(driver);
+//            LOGGER.info("After setDriver");
+//        } catch (Exception e) {
+//            LOGGER.error("Cannot initialiaze " + browser + " Driver" + e);
+//        }
+
+		String URL = "https://" + prop.getProperty("browserStackUserID") + ":" + prop.getProperty("browserStackPwd")
+				+ "@hub-cloud.browserstack.com/wd/hub";
+		String browser = null;
+		try {
+			System.setProperty("webdriver.chrome.driver", System.getProperty("user.dir") + File.separator + "src" + File.separator + "test"
+					+ File.separator + "resources" + File.separator + "drivers" + File.separator + "chromedriver_108.exe");
+			HashMap<String, Object> chromePrefs = new HashMap<>();
+			chromePrefs.put("profile.default_content_settings.popups", 0);
+			chromePrefs.put("profile.default_content_settings_values.automatic_downloads", 1);
+			chromePrefs.put("download.prompt_for_download", false);
+
+			/*
+			 * if (!FWKConstants.getIsLocal()) { String downloadFilepath =
+			 * System.getProperty("user.dir") + File.separator + "src" + File.separator +
+			 * "main" + File.separator + "resources" + File.separator + "data" +
+			 * File.separator + "downloads"; chromePrefs.put("download.default_directory",
+			 * downloadFilepath); setDownloadPath(downloadFilepath); }
+			 */
+
+			ChromeOptions options = new ChromeOptions();
+//			options.setExperimentalOption("pref", chromePrefs);
+//			options.setExperimentalOption("useAutomationExtention", false);
+//			options.addArguments("--no-sandbox");
+//			options.addArguments("--disable-dev-shm-usage");
+//			options.addArguments(new String[] { "Start-maximized" });
+//			options.addArguments(new String[] { "--test-type" });
+//			options.addArguments(new String[] { "--ignore-certification-error" });
+			options.addArguments("start-maximized"); // open Browser in maximized mode
+			options.addArguments("disable-infobars"); // disabling infobars
+			options.addArguments("--disable-extensions"); // disabling extensions
+			options.addArguments("--disable-gpu"); // applicable to windows os only
+			options.addArguments("--disable-dev-shm-usage"); // overcome limited resource problems
+			options.addArguments("--no-sandbox"); // Bypass OS security model
+
+			browser = prop.getProperty("browser");
+
+			EdgeOptions edgeoptions = new EdgeOptions();
+			edgeoptions.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
+//			edgeoptions.setPageLoadStrategy(PageLoadStrategy,"normal");
+			edgeoptions.setCapability(CapabilityType.UNEXPECTED_ALERT_BEHAVIOUR,"ignore");
+			edgeoptions.setCapability(CapabilityType.UNEXPECTED_ALERT_BEHAVIOUR,"ignore");
+//			List<String> args = Arrays.asList("user-data-dir=C:\\Users\\saikh.meeran\\AppData\\Local\\Microsoft\\Edge\\User Data1","--no-sandbox","--disable-dev-shm-usage");
+//			edgeoptions.setCapability(CapabilityType.PAGE_LOAD_STRATEGY, true);
+//			List<String> args = Arrays.asList("user-data-dir=C:\\Users\\archana.db\\AppData\\Local\\Microsoft\\Edge\\User Data1","--no-sandbox","--disable-dev-shm-usage");
+//			Map<String, Object> map = new HashMap<>();
+//			map.put("args", args);
+//			edgeoptions.setCapability("ms:edgeOptions", map);
+			HashMap<String, Object> edgePrefs= new HashMap<String, Object>();
+			edgePrefs.put("download.default_directory", System.getProperty("user.dir") + File.separator + "src" + File.separator + "test"
+					+ File.separator + "resources" + File.separator + "data");
+			edgeoptions.setExperimentalOption("prefs", edgePrefs);
+
+			LOGGER.info("Check is Local:" + prop.getProperty("isLocal"));
+			if (prop.getProperty("isLocal").equalsIgnoreCase("true")) {
+				if (browser.equalsIgnoreCase("Firefox")) {
+					LOGGER.info("Inside the Firefox Driver Code");
+					WebDriverManager.firefoxdriver().avoidBrowserDetection().setup();
+					driver = new FirefoxDriver();
+				} else if (browser.equalsIgnoreCase("IE")) {
+					LOGGER.info("Inside the IE Driver Code");
+					driver = new InternetExplorerDriver();
+				} else if (browser.equalsIgnoreCase("EDGE")) {
+					LOGGER.info("Inside the  EDGE Driver Code");
+					System.setProperty("webdriver.edge.driver",System.getProperty("user.dir") + File.separator + "src" + File.separator + "test"
+							+ File.separator + "resources" + File.separator + "data" + File.separator + "msedgedriver_119.exe");
+//					WebDriverManager.edgedriver().setup();
+					driver = new EdgeDriver(edgeoptions);
+//					driver = new EdgeDriver();
+				} else if (browser.equalsIgnoreCase("Chrome")) {
+					LOGGER.info("Inside the  Chrome Driver Code");
+//					WebDriverManager.chromedriver().setup();
+					driver = new ChromeDriver(options);
+
+				}
+				LOGGER.info("Browser screen dimention" + driver.manage().window().getSize());
+				LOGGER.info("Before setDriver");
+				setDriver(driver);
+				LOGGER.info("After setDriver");
+
+			} else {
+				LOGGER.info("Inside the Remote Driver Code");
+				DesiredCapabilities capabilities = new DesiredCapabilities();
+
+				StringBuilder stringB = new StringBuilder();
+//				stringB.append("Project_Build 2" + CalendarUtility.getCurrentDateWithoutHrs());
+				stringB.append("Project_Build_" + CalendarUtility.getCurrentDateWithoutHrs());
+
+				capabilities.setCapability("build", stringB);
+
+				HashMap<String, Boolean> networkLogsOptions = new HashMap<>();
+				networkLogsOptions.put("captureContent", true);
+				capabilities.setCapability("browserstack.networkLogs", true);
+				capabilities.setCapability("browserstack.networkLogsOptions", networkLogsOptions);
+				capabilities.setCapability("browserstack.uploadMedia", new String[]{"media://ef0616737e96bd606d0dd3a8ae9a4bc3b68530c9"});
+				capabilities.setCapability("projectName", "Project.automation.test.bdd");
+
+				capabilities.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
+				capabilities.setCapability("max-duration", FWKConstants.PAGELOADWAIT);
+				capabilities.setCapability("command timeout", FWKConstants.PAGELOADWAIT);
+				capabilities.setCapability("idle timeout", FWKConstants.PAGELOADWAIT);
+				capabilities.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
+				capabilities.setPlatform(Platform.ANY);
+//				HashMap<String, Object> browserstackOptions = new HashMap<String, Object>();
+
+				if (prop.getProperty("os").equalsIgnoreCase("OS X")) {
+					if (browser.equalsIgnoreCase("Firefox")) {
+						LOGGER.info("Inside the Firefox Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					} else if (browser.equalsIgnoreCase("Edge")) {
+						LOGGER.info("Inside the Edge Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					} else if (browser.equalsIgnoreCase("Safari")) {
+						LOGGER.info("Inside the  Safari Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					} else if (browser.equalsIgnoreCase("Chrome")) {
+						LOGGER.info("Inside the  Chrome Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					}
+
+				} else {
+					if (browser.equalsIgnoreCase("Firefox")) {
+						LOGGER.info("Inside the Firefox Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					} else if (browser.equalsIgnoreCase("Edge")) {
+						LOGGER.info("Inside the Edge Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					} else if (browser.equalsIgnoreCase("Chrome")) {
+						LOGGER.info("Inside the  Chrome Driver Code");
+						capabilities.setCapability("browserName", prop.getProperty("browser"));
+						capabilities.setCapability("browserVersion", prop.getProperty("browser_version"));
+					}
+				}
+
+//				browserstackOptions.put("sessionName", scenarioName);
+//				browserstackOptions.put("os", prop.getProperty("os"));
+//				browserstackOptions.put("osVersion", prop.getProperty("os_version"));
+//				capabilities.setCapability("bstack:options", browserstackOptions);
+				capabilities.setCapability("bstack:options", new JSONObject()
+						.put("os", prop.getProperty("os"))
+						.put("osVersion", prop.getProperty("os_version"))
+						.put("sessionName", scenarioName)
+						.put("uploadMedia", new JSONArray().put("media://ef0616737e96bd606d0dd3a8ae9a4bc3b68530c9"))
+						);
+				// capabilities.setCapability("browserstack.idleTimeout", "5");
+				capabilities.setCapability("browserstack.console", "info");
+				capabilities.setCapability("browserstack.debug", "true");
+				capabilities.setCapability("consoleLogs", "errors");
+				driver = new RemoteWebDriver(new URL(URL), capabilities);
+				driver.manage().window().maximize();
+			}
+			LOGGER.info("Browser screen dimension" + driver.manage().window().getSize());
+			LOGGER.info("Before setDriver");
+			setDriver(driver);
+			LOGGER.info("After setDriver");
+		} catch (Exception e) {
+			LOGGER.error("Cannot initialize " + browser + " Driver" + e);
+		}
+
+//
+
+	}
+
+	// get webdriver instant
+	public final WebDriver getDriver() {
+		return driver;
+	}
+
+	// set WebDriver instant
+	public final void setDriver(WebDriver driver) {
+		this.driver = driver;
+	}
+
+	// close webdriver instant
+	public final void tearDown() {
+		try {
+			LOGGER.info("Driver closed:::");
+			getDriver().quit();
+		} catch (Exception e) {
+			LOGGER.error("No driver instant found to quit" + e);
+		} finally {
+			if (!getDriver().equals(null)) {
+				getDriver().quit();
+			}
+		}
+
+	}
+
+	// invocation of driver and other supported handlers class
+	public final void initilizeUI() {
+
+		try {
+			if (System.getenv("runEnv") == null || System.getenv("runEnv").isEmpty()) {
+				configPath = FWKConstants.ENV;
+				FWKConstants.setIsLocal(true);
+			} else {
+				FWKConstants.setIsLocal(false);
+				configPath = System.getenv("runEnv").toLowerCase().trim();
+			}
+			LOGGER.info("Access Environment is - " + configPath);
+			manageDriver(DataReaderUtillity.getProp());
+			LOGGER.info("initialize method invoked");
+			driver.manage().window().maximize();
+			if (DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true")) {
+				LOGGER.info("Testing on local environment");
+				driver.get(DataReaderUtillity.getProp().getProperty("url"));
+				LOGGER.info("URL loaded::" + DataReaderUtillity.getProp().getProperty("url"));
+//                driver.manage().deleteAllCookies();
+			} else {
+				LOGGER.info("Testing on remote environment");
+				driver.get(DataReaderUtillity.getProp().getProperty("url"));
+
+			}
+			driver.manage().timeouts().implicitlyWait(FWKConstants.IMPLICITWAIT, TimeUnit.SECONDS);
+			driver.manage().timeouts().pageLoadTimeout(FWKConstants.PAGELOADWAIT, TimeUnit.SECONDS);
+			browserSet = true;
+			setBrowserSet(true);
+		} catch (Exception e) {
+			LOGGER.error("Cannot initialize the method" + e);
+		}
+
+//        try {
+//
+//            if (System.getenv("runEnv") == null || System.getenv("runEnv").isEmpty()) {
+//                configPath = FWKConstants.ENV;
+//                FWKConstants.setIsLocal(true);
+//            } else {
+//                FWKConstants.setIsLocal(false);
+//                configPath = System.getenv("runEnv").toLowerCase().trim();
+//            }
+//            LOGGER.info("Access Environment is - " + configPath);
+//            manageDriver(DataReaderUtillity.getProp());
+//            LOGGER.info("initialize method invoked");
+//            if (DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true")) {
+//                LOGGER.info("Testing on local environment");
+//                driver.get(DataReaderUtillity.getProp().getProperty("url"));
+//                LOGGER.info("URL loaded::" + DataReaderUtillity.getProp().getProperty("url"));
+////                driver.manage().deleteAllCookies();
+//            } else {
+//                LOGGER.info("Testing on remote environment");
+//                driver.get(DataReaderUtillity.getProp().getProperty("validateurl"));
+//                driver.manage().deleteAllCookies();
+////                if(DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true"))
+////                {
+////                  //  String cookieVal = DataReaderUtillity.getProp().getProperty("cookieAuthName");
+////                    driver.manage().addCookie(new Cookie(DataReaderUtillity.getProp().getProperty("cookieAuthName"), DataReaderUtillity.getProp().getProperty("cookieValue")));
+////                }
+////                else
+////                {
+////                    driver.manage().addCookie(new Cookie(DataReaderUtillity.getProp().getProperty("cookieAuthName"), System.getenv("cookieValue")));
+////                }
+//                if (authenticationURL()) {
+//                    navigateURL();
+//                }
+//
+//            }
+//
+//            driver.manage().window().maximize();
+//            driver.manage().timeouts().implicitlyWait(FWKConstants.IMPLICITWAIT, TimeUnit.SECONDS);
+//            driver.manage().timeouts().pageLoadTimeout(FWKConstants.PAGELOADWAIT, TimeUnit.SECONDS);
+//
+//            browserSet = true;
+//            setBrowserSet(true);
+//        } catch (Exception e) {
+//            LOGGER.error("Cannot initiaze the method" + e);
+//        }
+	}
+
+	public final void initilizeUISSO() {
+
+		try {
+			if (System.getenv("runEnv") == null || System.getenv("runEnv").isEmpty()) {
+				configPath = FWKConstants.ENV;
+				FWKConstants.setIsLocal(true);
+			} else {
+				FWKConstants.setIsLocal(false);
+				configPath = System.getenv("runEnv").toLowerCase().trim();
+			}
+			LOGGER.info("Access Environment is - " + configPath);
+			manageDriverCRM(DataReaderUtillity.getProp());
+			LOGGER.info("initialize method invoked");
+			driver.manage().window().maximize();
+			if (DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true")) {
+				LOGGER.info("Testing on local environment");
+				driver.get(DataReaderUtillity.getProp().getProperty("url_SSO"));
+				LOGGER.info("URL loaded::" + DataReaderUtillity.getProp().getProperty("url_SSO"));
+//                driver.manage().deleteAllCookies();
+			} else {
+				LOGGER.info("Testing on remote environment");
+				driver.get(DataReaderUtillity.getProp().getProperty("url_SSO"));
+
+			}
+			driver.manage().timeouts().implicitlyWait(FWKConstants.IMPLICITWAIT, TimeUnit.SECONDS);
+			driver.manage().timeouts().pageLoadTimeout(FWKConstants.PAGELOADWAIT, TimeUnit.SECONDS);
+			browserSet = true;
+			setBrowserSet(true);
+		} catch (Exception e) {
+			LOGGER.error("Cannot initialize the method" + e);
+		}
+
+//        try {
+//
+//            if (System.getenv("runEnv") == null || System.getenv("runEnv").isEmpty()) {
+//                configPath = FWKConstants.ENV;
+//                FWKConstants.setIsLocal(true);
+//            } else {
+//                FWKConstants.setIsLocal(false);
+//                configPath = System.getenv("runEnv").toLowerCase().trim();
+//            }
+//            LOGGER.info("Access Environment is - " + configPath);
+//            manageDriver(DataReaderUtillity.getProp());
+//            LOGGER.info("initialize method invoked");
+//            if (DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true")) {
+//                LOGGER.info("Testing on local environment");
+//                driver.get(DataReaderUtillity.getProp().getProperty("url"));
+//                LOGGER.info("URL loaded::" + DataReaderUtillity.getProp().getProperty("url"));
+////                driver.manage().deleteAllCookies();
+//            } else {
+//                LOGGER.info("Testing on remote environment");
+//                driver.get(DataReaderUtillity.getProp().getProperty("validateurl"));
+//                driver.manage().deleteAllCookies();
+////                if(DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true"))
+////                {
+////                  //  String cookieVal = DataReaderUtillity.getProp().getProperty("cookieAuthName");
+////                    driver.manage().addCookie(new Cookie(DataReaderUtillity.getProp().getProperty("cookieAuthName"), DataReaderUtillity.getProp().getProperty("cookieValue")));
+////                }
+////                else
+////                {
+////                    driver.manage().addCookie(new Cookie(DataReaderUtillity.getProp().getProperty("cookieAuthName"), System.getenv("cookieValue")));
+////                }
+//                if (authenticationURL()) {
+//                    navigateURL();
+//                }
+//
+//            }
+//
+//            driver.manage().window().maximize();
+//            driver.manage().timeouts().implicitlyWait(FWKConstants.IMPLICITWAIT, TimeUnit.SECONDS);
+//            driver.manage().timeouts().pageLoadTimeout(FWKConstants.PAGELOADWAIT, TimeUnit.SECONDS);
+//
+//            browserSet = true;
+//            setBrowserSet(true);
+//        } catch (Exception e) {
+//            LOGGER.error("Cannot initiaze the method" + e);
+//        }
+	}
+
+
+	public final void initilizeUICRM() {
+
+		try {
+			if (System.getenv("runEnv") == null || System.getenv("runEnv").isEmpty()) {
+				configPath = FWKConstants.ENV;
+				FWKConstants.setIsLocal(true);
+			} else {
+				FWKConstants.setIsLocal(false);
+				configPath = System.getenv("runEnv").toLowerCase().trim();
+			}
+			LOGGER.info("Access Environment is - " + configPath);
+			manageDriverCRM(DataReaderUtillity.getProp());
+			LOGGER.info("initialize method invoked");
+			driver.manage().window().maximize();
+			if (DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true")) {
+				LOGGER.info("Testing on local environment");
+				driver.get(DataReaderUtillity.getProp().getProperty("url_CRM"));
+				LOGGER.info("URL loaded::" + DataReaderUtillity.getProp().getProperty("url_CRM"));
+				driver.navigate().refresh();
+				UICommonUtility.waitforSeconds(5);
+				driver.switchTo().window("");
+                driver.manage().deleteAllCookies();
+			} else {
+				LOGGER.info("Testing on remote environment");
+				driver.get(DataReaderUtillity.getProp().getProperty("url_CRM"));
+				driver.manage().deleteAllCookies();
+				LOGGER.info("URL loaded::" + DataReaderUtillity.getProp().getProperty("url_CRM"));
+				driver.navigate().refresh();
+				UICommonUtility.waitforSeconds(5);
+				driver.switchTo().window("");
+
+
+			}
+			driver.manage().timeouts().implicitlyWait(FWKConstants.IMPLICITWAIT, TimeUnit.SECONDS);
+			driver.manage().timeouts().pageLoadTimeout(FWKConstants.PAGELOADWAIT, TimeUnit.SECONDS);
+			browserSet = true;
+			setBrowserSet(true);
+		} catch (Exception e) {
+			LOGGER.error("Cannot initialize the method" + e);
+		}
+
+//        try {
+//
+//            if (System.getenv("runEnv") == null || System.getenv("runEnv").isEmpty()) {
+//                configPath = FWKConstants.ENV;
+//                FWKConstants.setIsLocal(true);
+//            } else {
+//                FWKConstants.setIsLocal(false);
+//                configPath = System.getenv("runEnv").toLowerCase().trim();
+//            }
+//            LOGGER.info("Access Environment is - " + configPath);
+//            manageDriver(DataReaderUtillity.getProp());
+//            LOGGER.info("initialize method invoked");
+//            if (DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true")) {
+//                LOGGER.info("Testing on local environment");
+//                driver.get(DataReaderUtillity.getProp().getProperty("url"));
+//                LOGGER.info("URL loaded::" + DataReaderUtillity.getProp().getProperty("url"));
+////                driver.manage().deleteAllCookies();
+//            } else {
+//                LOGGER.info("Testing on remote environment");
+//                driver.get(DataReaderUtillity.getProp().getProperty("validateurl"));
+//                driver.manage().deleteAllCookies();
+////                if(DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true"))
+////                {
+////                  //  String cookieVal = DataReaderUtillity.getProp().getProperty("cookieAuthName");
+////                    driver.manage().addCookie(new Cookie(DataReaderUtillity.getProp().getProperty("cookieAuthName"), DataReaderUtillity.getProp().getProperty("cookieValue")));
+////                }
+////                else
+////                {
+////                    driver.manage().addCookie(new Cookie(DataReaderUtillity.getProp().getProperty("cookieAuthName"), System.getenv("cookieValue")));
+////                }
+//                if (authenticationURL()) {
+//                    navigateURL();
+//                }
+//
+//            }
+//
+//            driver.manage().window().maximize();
+//            driver.manage().timeouts().implicitlyWait(FWKConstants.IMPLICITWAIT, TimeUnit.SECONDS);
+//            driver.manage().timeouts().pageLoadTimeout(FWKConstants.PAGELOADWAIT, TimeUnit.SECONDS);
+//
+//            browserSet = true;
+//            setBrowserSet(true);
+//        } catch (Exception e) {
+//            LOGGER.error("Cannot initiaze the method" + e);
+//        }
+	}
+
+	public final void initilizeUICRMUser2() {
+
+		try {
+			if (System.getenv("runEnv") == null || System.getenv("runEnv").isEmpty()) {
+				configPath = FWKConstants.ENV;
+				FWKConstants.setIsLocal(true);
+			} else {
+				FWKConstants.setIsLocal(false);
+				configPath = System.getenv("runEnv").toLowerCase().trim();
+			}
+			LOGGER.info("Access Environment is - " + configPath);
+			manageDriverCRM(DataReaderUtillity.getProp());
+			LOGGER.info("initialize method invoked");
+			driver.manage().window().maximize();
+			if (DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true")) {
+				LOGGER.info("Testing on local environment");
+				driver.get(DataReaderUtillity.getProp().getProperty("url_CRM_User2"));
+				LOGGER.info("URL loaded::" + DataReaderUtillity.getProp().getProperty("url_CRM_User2"));
+				driver.navigate().refresh();
+				UICommonUtility.waitforSeconds(10);
+				driver.switchTo().window("");
+				driver.manage().deleteAllCookies();
+			} else {
+				LOGGER.info("Testing on remote environment");
+				driver.get(DataReaderUtillity.getProp().getProperty("url_CRM_User2"));
+				LOGGER.info("URL loaded::" + DataReaderUtillity.getProp().getProperty("url_CRM_User2"));
+				driver.navigate().refresh();
+				UICommonUtility.waitforSeconds(10);
+				driver.switchTo().window("");
+				driver.manage().deleteAllCookies();
+
+			}
+			driver.manage().timeouts().implicitlyWait(FWKConstants.IMPLICITWAIT, TimeUnit.SECONDS);
+			driver.manage().timeouts().pageLoadTimeout(FWKConstants.PAGELOADWAIT, TimeUnit.SECONDS);
+			browserSet = true;
+			setBrowserSet(true);
+		} catch (Exception e) {
+			LOGGER.error("Cannot initialize the method" + e);
+		}
+
+//        try {
+//
+//            if (System.getenv("runEnv") == null || System.getenv("runEnv").isEmpty()) {
+//                configPath = FWKConstants.ENV;
+//                FWKConstants.setIsLocal(true);
+//            } else {
+//                FWKConstants.setIsLocal(false);
+//                configPath = System.getenv("runEnv").toLowerCase().trim();
+//            }
+//            LOGGER.info("Access Environment is - " + configPath);
+//            manageDriver(DataReaderUtillity.getProp());
+//            LOGGER.info("initialize method invoked");
+//            if (DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true")) {
+//                LOGGER.info("Testing on local environment");
+//                driver.get(DataReaderUtillity.getProp().getProperty("url"));
+//                LOGGER.info("URL loaded::" + DataReaderUtillity.getProp().getProperty("url"));
+////                driver.manage().deleteAllCookies();
+//            } else {
+//                LOGGER.info("Testing on remote environment");
+//                driver.get(DataReaderUtillity.getProp().getProperty("validateurl"));
+//                driver.manage().deleteAllCookies();
+////                if(DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true"))
+////                {
+////                  //  String cookieVal = DataReaderUtillity.getProp().getProperty("cookieAuthName");
+////                    driver.manage().addCookie(new Cookie(DataReaderUtillity.getProp().getProperty("cookieAuthName"), DataReaderUtillity.getProp().getProperty("cookieValue")));
+////                }
+////                else
+////                {
+////                    driver.manage().addCookie(new Cookie(DataReaderUtillity.getProp().getProperty("cookieAuthName"), System.getenv("cookieValue")));
+////                }
+//                if (authenticationURL()) {
+//                    navigateURL();
+//                }
+//
+//            }
+//
+//            driver.manage().window().maximize();
+//            driver.manage().timeouts().implicitlyWait(FWKConstants.IMPLICITWAIT, TimeUnit.SECONDS);
+//            driver.manage().timeouts().pageLoadTimeout(FWKConstants.PAGELOADWAIT, TimeUnit.SECONDS);
+//
+//            browserSet = true;
+//            setBrowserSet(true);
+//        } catch (Exception e) {
+//            LOGGER.error("Cannot initiaze the method" + e);
+//        }
+	}
+
+
+	public final void initilizeUIOutlook() {
+
+		try {
+			if (System.getenv("runEnv") == null || System.getenv("runEnv").isEmpty()) {
+				configPath = FWKConstants.ENV;
+				FWKConstants.setIsLocal(true);
+			} else {
+				FWKConstants.setIsLocal(false);
+				configPath = System.getenv("runEnv").toLowerCase().trim();
+			}
+			LOGGER.info("Access Environment is - " + configPath);
+			manageDriverCRM(DataReaderUtillity.getProp());
+			LOGGER.info("initialize method invoked");
+			driver.manage().window().maximize();
+			if (DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true")) {
+				LOGGER.info("Testing on local environment");
+				driver.get(DataReaderUtillity.getProp().getProperty("url_Outlook"));
+				LOGGER.info("URL loaded::" + DataReaderUtillity.getProp().getProperty("url_Outlook"));
+
+//                driver.manage().deleteAllCookies();
+			} else {
+				LOGGER.info("Testing on remote environment");
+				driver.get(DataReaderUtillity.getProp().getProperty("url_Outlook"));
+
+			}
+			driver.manage().timeouts().implicitlyWait(FWKConstants.IMPLICITWAIT, TimeUnit.SECONDS);
+			driver.manage().timeouts().pageLoadTimeout(FWKConstants.PAGELOADWAIT, TimeUnit.SECONDS);
+			browserSet = true;
+			setBrowserSet(true);
+		} catch (Exception e) {
+			LOGGER.error("Cannot initialize the method" + e);
+		}
+
+//        try {
+//
+//            if (System.getenv("runEnv") == null || System.getenv("runEnv").isEmpty()) {
+//                configPath = FWKConstants.ENV;
+//                FWKConstants.setIsLocal(true);
+//            } else {
+//                FWKConstants.setIsLocal(false);
+//                configPath = System.getenv("runEnv").toLowerCase().trim();
+//            }
+//            LOGGER.info("Access Environment is - " + configPath);
+//            manageDriver(DataReaderUtillity.getProp());
+//            LOGGER.info("initialize method invoked");
+//            if (DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true")) {
+//                LOGGER.info("Testing on local environment");
+//                driver.get(DataReaderUtillity.getProp().getProperty("url"));
+//                LOGGER.info("URL loaded::" + DataReaderUtillity.getProp().getProperty("url"));
+////                driver.manage().deleteAllCookies();
+//            } else {
+//                LOGGER.info("Testing on remote environment");
+//                driver.get(DataReaderUtillity.getProp().getProperty("validateurl"));
+//                driver.manage().deleteAllCookies();
+////                if(DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true"))
+////                {
+////                  //  String cookieVal = DataReaderUtillity.getProp().getProperty("cookieAuthName");
+////                    driver.manage().addCookie(new Cookie(DataReaderUtillity.getProp().getProperty("cookieAuthName"), DataReaderUtillity.getProp().getProperty("cookieValue")));
+////                }
+////                else
+////                {
+////                    driver.manage().addCookie(new Cookie(DataReaderUtillity.getProp().getProperty("cookieAuthName"), System.getenv("cookieValue")));
+////                }
+//                if (authenticationURL()) {
+//                    navigateURL();
+//                }
+//
+//            }
+//
+//            driver.manage().window().maximize();
+//            driver.manage().timeouts().implicitlyWait(FWKConstants.IMPLICITWAIT, TimeUnit.SECONDS);
+//            driver.manage().timeouts().pageLoadTimeout(FWKConstants.PAGELOADWAIT, TimeUnit.SECONDS);
+//
+//            browserSet = true;
+//            setBrowserSet(true);
+//        } catch (Exception e) {
+//            LOGGER.error("Cannot initiaze the method" + e);
+//        }
+	}
+
+
+	// Code for Multiple UE
+	public final void initializeUI(String url) {
+		try {
+			if (System.getenv("runEnv") == null || System.getenv("runEnv").isEmpty()) {
+				configPath = FWKConstants.ENV;
+				FWKConstants.setIsLocal(true);
+			} else {
+				FWKConstants.setIsLocal(false);
+				configPath = System.getenv("runEnv").toLowerCase().trim();
+			}
+			LOGGER.info("Access Environment is - " + configPath);
+			manageDriver(DataReaderUtillity.getProp());
+			LOGGER.info("initialize method invoked");
+			driver.manage().window().maximize();
+			if (DataReaderUtillity.getProp().getProperty("isLocal").equalsIgnoreCase("true")) {
+				LOGGER.info("Testing on local environment");
+				driver.get(url);
+				LOGGER.info("URL loaded::" + url);
+				// driver.manage().deleteAllCookies();
+			} else {
+				driver.get(url);
+				LOGGER.info("URL loaded::" + url);
+			}
+			driver.manage().timeouts().implicitlyWait(FWKConstants.IMPLICITWAIT, TimeUnit.SECONDS);
+			driver.manage().timeouts().pageLoadTimeout(FWKConstants.PAGELOADWAIT, TimeUnit.SECONDS);
+			browserSet = true;
+			setBrowserSet(true);
+		} catch (Exception e) {
+			LOGGER.error("Cannot initialize the method" + e);
+		}
+	}
+
+	// authenticateURL
+	public Boolean authenticationURL() {
+		try {
+			driver.get(DataReaderUtillity.getProp().getProperty("validateURL"));
+			LOGGER.info("Validate Authentication check:::" + UICommonUtility.getText(By.tagName("pre")));
+			if (!UICommonUtility.getText(By.tagName("pre")).trim().equalsIgnoreCase("Authenticated"))
+				;
+			{
+				LOGGER.info("Authenticated failed ....Stopped Execution");
+				tearDown();
+				return false;
+			}
+
+		} catch (Exception e) {
+
+		}
+		LOGGER.info("Authenticated Successful");
+		return true;
+
+	}
+
+	public final void browserStackTestStatus(boolean value) {
+
+		JavascriptExecutor jse = (JavascriptExecutor) driver;
+		try {
+			LOGGER.info("Browser Stack Test Status:::" + value);
+			if (value == true) {
+				jse.executeScript("browserstack_executor: {\"action\": \"setSessionStatus\", \"arguments\": {\"status\": \"passed\", \"reason\": \"Scenario is working as expected !\"}}");
+			} else {
+				jse.executeScript("browserstack_executor: {\"action\": \"setSessionStatus\", \"arguments\": {\"status\": \"failed\", \"reason\": \"Scenario is not working as expected !\"}}");
+			}
+		} catch (Exception e) {
+			LOGGER.error("No Browser Stack Test Status logged " + e);
+		}
+
+	}
+
+
+public static String scenarioName= null;
+public static void browserStackTestName(String testName) {
+    LOGGER.info("Executing the test case: " + testName);
+
+    try{
+       if(testName!=null){
+           scenarioName=testName;
+       }
+   }catch (Exception e){
+       LOGGER.error("No test case tracked " + e);
+    }
+}
+}
