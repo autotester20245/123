@@ -1,0 +1,335 @@
+package common;
+
+
+
+import org.apache.log4j.Logger;
+
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Random;
+//import java.util.logging.Logger;
+//import java.util.logging.Logger;
+
+public class CalendarUtility {
+
+    private static final Logger LOGGER = Logger.getLogger(CalendarUtility.class.getName());
+
+
+
+    // Get Current time stamp
+    // return -> Current timeStamp in format yyyy-MM-dd:HH:mm:ss:SSS
+    public static String getCurrentTimeStamp() {
+        SimpleDateFormat sdf = new SimpleDateFormat("MMddHHmmssSSS");
+        LOGGER.info("getCurrentTimeStamp in simple date format");
+        return sdf.format(new Date());
+    }
+
+    public static String getCurrentDate() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd : HH a");
+        LOGGER.info("getCurrentTimeStamp in simple date format");
+        return sdf.format(new Date());
+    }
+
+
+    public static boolean isDateWorkingDay(Calendar reportingDate) {
+        boolean isWorkingDay = true;
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(reportingDate.getTime());
+        if (Calendar.SATURDAY == calendar.get(calendar.DAY_OF_WEEK) || Calendar.SUNDAY == calendar.get(calendar.DAY_OF_WEEK))
+            ;
+        {
+            isWorkingDay = false;
+        }
+
+        return isWorkingDay;
+    }
+
+    // Method use for getting the date value in format eg : 2021-11-05
+    //dd -> Provide date
+    //month -> provide month in format Jan
+    //yyyy -> provide year value
+
+    public static String getNextNusinessDate(String reportingDate) {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MMMM/yyyy");
+        Calendar currentDate = null;
+        try {
+            Date date = simpleDateFormat.parse(reportingDate);
+            currentDate = Calendar.getInstance();
+            currentDate.setTime(date);
+            currentDate.add(Calendar.DAY_OF_WEEK, 1);
+            while (!isDateWorkingDay(currentDate)) {
+                currentDate.add(Calendar.DAY_OF_WEEK, 1);
+            }
+        } catch (ParseException e) {
+            LOGGER.info("parseException::in getNext business Date" + e);
+        }
+        return simpleDateFormat.format(currentDate.getTime());
+    }
+
+    // Method use for getting the date value in format eg : 13/05/2021
+    //dd -> Provide date
+    //month -> provide month value
+    //yyyy -> provide year value
+
+    public static String getBusinessDayonDays(String reportingDate, int noofDays, String ability) throws ParseException {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd/MMM/YYYY");
+        Date date = simpleDateFormat.parse(reportingDate);
+        Calendar currentDate = Calendar.getInstance();
+        currentDate.setTime(date);
+        Random random = new Random();
+        int days = random.nextInt(noofDays);
+        currentDate.add(Calendar.DAY_OF_WEEK, days);
+        if (ability.equalsIgnoreCase("ABLE")) {
+            while (!isDateWorkingDay(currentDate)) {
+                currentDate.add(Calendar.DAY_OF_WEEK, 1);
+            }
+        } else if (ability.equalsIgnoreCase("UNAbLE")) {
+            while (isDateWorkingDay(currentDate)) {
+                currentDate.add(Calendar.DAY_OF_WEEK, 1);
+            }
+        }
+        return simpleDateFormat.format(currentDate.getTime());
+
+    }
+
+    // Method use for identifing current calendar date is working date or not
+    //reportingDate -> Provide Calendar date
+    //REturn boolean value based on working day
+
+    public static String convertDateFormatYYYYMMDD(String inputString) {
+        SimpleDateFormat fromUser = new SimpleDateFormat("dd-MM-yyyy");
+        SimpleDateFormat myFormat = new SimpleDateFormat("yyyy-MM-dd");
+        String dateMyformat = null;
+
+        Date dateFromUser = null; // parse it to the existing date pattern and return date type
+        try {
+            dateFromUser = fromUser.parse(inputString);
+            dateMyformat = myFormat.format(dateFromUser);
+
+        } catch (ParseException e) {
+            LOGGER.error("Exceptions Handled for setToday->" + e);
+        }
+
+        return dateMyformat;// 2009-05-19
+    }
+
+    //Method to get the next businessDate
+    //reporting date
+
+    public static String convertDateFormatddMMYYYY(String inputString) throws ParseException {
+        SimpleDateFormat datePattern = new SimpleDateFormat("dd MMM yyyy"); //output format
+        Date date = new SimpleDateFormat("yyyy-MM-dd").parse(inputString); //input value
+        String stringDate = datePattern.format(date);
+        return stringDate;
+    }
+
+    //method to get business day on days
+    //reporting date -> provide reporting date value in 06/Jan/2021
+    //no of days->
+    //ability ->
+
+    public static String convertDateFormatddMMYYYYwithdash(String inputString) throws ParseException {
+        SimpleDateFormat datePattern = new SimpleDateFormat("dd-MMM-YYYY"); //output format
+        Date date = new SimpleDateFormat("yyyy-MM-dd").parse(inputString); //input value
+        String stringDate = datePattern.format(date);
+        return stringDate;
+    }
+
+    // Method to covert input string date value to formatted date String value for eg - "2009-05-19"
+    //inputString -> Input String date value in format "19-05-2021"/
+    // return date value in simple Date Format
+
+    public static String convertTimeStampToddMMYYYY(String inputString) throws ParseException {
+        SimpleDateFormat datePattern = new SimpleDateFormat("dd MMM yyyy"); //output format
+        String updatedDateValue = inputString.split("T")[0];
+        Date date = new SimpleDateFormat("yyyy-MM-dd").parse(updatedDateValue); //input value
+        String stringDate = datePattern.format(date);
+        LOGGER.info("dd MMM yyyy:::" + stringDate);
+        return stringDate;
+    }
+
+
+    //Method to convert input string date value to formatted date string for eg 17 jul 2020
+
+    //inputDate -> input string date value in format eg "2021-07-17"
+    //return String date value in simplpe format
+
+    public static String convertFromddMMMDDYYYY(String inputString) throws ParseException {
+        SimpleDateFormat datePattern = new SimpleDateFormat("yyyy-MM-dd"); //output format
+        Date date = new SimpleDateFormat("MMM dd,yyyy").parse(inputString); //input value
+        String stringDate = datePattern.format(date);
+        LOGGER.info("yyyy-MM-dd:::" + stringDate);
+        return stringDate;
+    }
+
+    //Method to convert input string date value to formatted date string for eg 17-jul-2020
+
+    //inputDate -> input string date value in format eg "2021-07-17"
+    //return String date value in simplpe format
+
+    public static String convertDateToYYYYmmddwithSlash(String inputString) throws ParseException {
+        SimpleDateFormat datePattern = new SimpleDateFormat("dd/MMM/yyyy"); //output format
+        Date date = new SimpleDateFormat("yyyy-MM-dd").parse(inputString); //input value
+        String stringDate = datePattern.format(date);
+        LOGGER.info("dd/MMM/yyyy:::" + stringDate);
+        return stringDate;
+    }
+
+    //Method to convert input string date value to formatted date string for eg 17 jul 2020
+    //inputDate -> input string date value in format eg "2021-07-17T10:31:11.802950"
+    //return String date value in simplpe format 17 jul 2020
+
+    public static boolean isValidFormat(String format, String value) {
+        Date date = null;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(format);
+            date = sdf.parse(value);
+            if (!value.equals(sdf.format(date))) {
+                date = null;
+            }
+        } catch (ParseException e) {
+            LOGGER.info("Date format is not valid due to " + e);
+        }
+        return date != null;
+    }
+
+    //Method to convert input string date value to formatted date string for eg '2021-11-30'
+    //inputDate -> input string date value in format eg "Nov 30,2021"
+    //return String date value in simplpe format 2021-11-30
+
+    public static String convertDateFormatValueYYYYMMDD(String inputString) {
+        SimpleDateFormat fromUser = new SimpleDateFormat("MM/dd/yyyy");
+        SimpleDateFormat myFormat = new SimpleDateFormat("yyyy-MM-dd");
+        String dateMyformat = null;
+
+        Date dateFromUser = null; // parse it to the existing date pattern and return date type
+        try {
+            dateFromUser = fromUser.parse(inputString);
+            dateMyformat = myFormat.format(dateFromUser);
+
+        } catch (ParseException e) {
+            LOGGER.error("Exceptions Handled for setToday->" + e);
+        }
+
+        return dateMyformat;// 2009-05-19
+    }
+
+    //Method to convert input string date value to formatted date string for eg '07/JAN/2021'
+    //inputDate -> input string date value in format eg "2021-11-30"
+    //return String date value in simplpe format 07/JAN/2021
+
+    public static String convertTimeStampToUpdatedFormatInLongFormat(String timeStamp) throws ParseException {
+        String updatedDateTimeStamp = timeStamp.substring(timeStamp.lastIndexOf("-") + 1);
+        updatedDateTimeStamp = updatedDateTimeStamp.substring(0, updatedDateTimeStamp.lastIndexOf(":"));
+
+        String updatedDateTimeStampHr = updatedDateTimeStamp.substring(0, updatedDateTimeStamp.indexOf(":")).split("T")[1];
+
+        String doubleDigitUpdatedTimeStampHR = "";
+
+        String updatedTimeStampMinutesDigit = updatedDateTimeStamp.substring(updatedDateTimeStamp.indexOf(":") + 1);
+
+        String amOrPm;
+        int timeStampHr = Integer.parseInt(updatedDateTimeStampHr);
+
+        if (timeStampHr >= 12) {
+            timeStampHr = timeStampHr - 12;
+            if (timeStampHr < 10) {
+                doubleDigitUpdatedTimeStampHR = "0" + timeStampHr;
+
+            } else {
+                doubleDigitUpdatedTimeStampHR = String.valueOf(timeStampHr);
+            }
+            amOrPm = "PM";
+        } else {
+            amOrPm = "AM";
+            if (timeStampHr < 10) {
+                doubleDigitUpdatedTimeStampHR = "0" + timeStampHr;
+
+            } else {
+                doubleDigitUpdatedTimeStampHR = String.valueOf(timeStampHr);
+            }
+        }
+        String updatedTimeStempFormat = convertDateFormatddMMYYYY(timeStamp) +
+                "(" + doubleDigitUpdatedTimeStampHR + ":" + updatedTimeStampMinutesDigit
+                + " " + amOrPm + ")";
+
+        LOGGER.info("Final TimeStamp Value::" + updatedTimeStempFormat);
+        return updatedTimeStempFormat;
+
+
+    }
+
+    // Method to validate date format
+
+    // format -> Provide date format syntax
+    //value -> provide data value
+    //return -> boolean value based on return
+
+    //Get the Month value in NUmber FOrmat
+    // month -> provide input as month value in format ""Jan
+    // return -> Number Value of provided month
+    public String getMonNUmber(String month) {
+        if (month.equalsIgnoreCase("Jan")) {
+            return "01";
+        } else if (month.equalsIgnoreCase("Feb")) {
+            return "02";
+        } else if (month.equalsIgnoreCase("Mar")) {
+            return "03";
+        } else if (month.equalsIgnoreCase("Apr")) {
+            return "04";
+        } else if (month.equalsIgnoreCase("May")) {
+            return "05";
+        } else if (month.equalsIgnoreCase("Jun")) {
+            return "06";
+        } else if (month.equalsIgnoreCase("Jul")) {
+            return "07";
+        } else if (month.equalsIgnoreCase("Aug")) {
+            return "08";
+        } else if (month.equalsIgnoreCase("Sep")) {
+            return "09";
+        } else if (month.equalsIgnoreCase("Oct")) {
+            return "10";
+        } else if (month.equalsIgnoreCase("Nov")) {
+            return "11";
+        } else if (month.equalsIgnoreCase("Dec")) {
+            return "12";
+        }
+        return null;
+    }
+    // Method to covert input string date value to formatted date String value for eg - "2009-05-19"
+    //inputString -> Input String date value in format "19/05/2021"/
+    // return date value in simple Date Format 2009-05-19
+
+    public String getDataInYYYYMMDDFormat(String dd, String month, String yyyy) {
+        String month1 = getMonNUmber(month);
+        String day = dd;
+        if (Integer.parseInt(dd) < 9 && !dd.contains("0")) {
+            day = "0" + dd;
+        }
+        String date = yyyy + "-" + month1 + "-" + day;
+        return date;
+    }
+
+
+    //Method to convert input String date value to formatted date String value for e.g "09 Jul 2021 (11:21 AM)"
+    //inputDate -> input string date value in format eg "2021-07-17T10:31:11.802950"
+    //return String date value in simplpe format "09 Jul 2021 (11:21 AM)"
+
+    public String getDataInDDMMYYYYFormat(String dd, String month, String yyyy) {
+        String day = dd;
+        if (Integer.parseInt(dd) < 9) {
+            day = "0" + dd;
+        }
+        String date = day + "/" + month + "/" + yyyy;
+        return date;
+    }
+
+    public static String getCurrentDateWithoutHrs() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        LOGGER.info("getCurrentTimeStamp in simple date format");
+        return sdf.format(new Date());
+    }
+}
